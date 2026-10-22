@@ -96,7 +96,7 @@ ul.task-list li input[type="checkbox"] {
   <li><a href="#statistiques-descriptives" id="toc-statistiques-descriptives" class="nav-link" data-scroll-target="#statistiques-descriptives"><span class="header-section-number">4</span> Statistiques descriptives</a>
   <ul class="collapse">
   <li><a href="#caractéristiques-des-slbs" id="toc-caractéristiques-des-slbs" class="nav-link" data-scroll-target="#caractéristiques-des-slbs"><span class="header-section-number">4.1</span> Caractéristiques des SLBs</a></li>
-  <li><a href="#statistiques-sur-les-kpis-des-slbs" id="toc-statistiques-sur-les-kpis-des-slbs" class="nav-link" data-scroll-target="#statistiques-sur-les-kpis-des-slbs"><span class="header-section-number">4.2</span> Statistiques sur les KPIs des SLBs</a></li>
+  <li><a href="#statistiques-sur-les-kpis-des-slbs-et-filtrage-des-données" id="toc-statistiques-sur-les-kpis-des-slbs-et-filtrage-des-données" class="nav-link" data-scroll-target="#statistiques-sur-les-kpis-des-slbs-et-filtrage-des-données"><span class="header-section-number">4.2</span> Statistiques sur les KPIs des SLBs et filtrage des données</a></li>
   <li><a href="#construction-finale-des-bases-de-données" id="toc-construction-finale-des-bases-de-données" class="nav-link" data-scroll-target="#construction-finale-des-bases-de-données"><span class="header-section-number">4.3</span> Construction finale des bases de données</a></li>
   </ul></li>
   </ul>
@@ -624,7 +624,7 @@ ul.task-list li input[type="checkbox"] {
 <li>La répartition des devises en lesquelles sont libellées les obligations;</li>
 <li>La répartition des types de pénalités/récompenses associés aux obligations.</li>
 </ul>
-<div class="cell quarto-layout-panel" data-layout-nrow="2" data-layout-ncol="2">
+<div class="cell quarto-layout-panel" data-layout-ncol="2" data-layout-nrow="2">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: flex-start;">
 <div class="quarto-figure quarto-figure-center">
@@ -663,8 +663,8 @@ ul.task-list li input[type="checkbox"] {
 </div>
 </div>
 </section>
-<section id="statistiques-sur-les-kpis-des-slbs" class="level2" data-number="4.2">
-<h2 data-number="4.2" class="anchored" data-anchor-id="statistiques-sur-les-kpis-des-slbs"><span class="header-section-number">4.2</span> Statistiques sur les KPIs des SLBs</h2>
+<section id="statistiques-sur-les-kpis-des-slbs-et-filtrage-des-données" class="level2" data-number="4.2">
+<h2 data-number="4.2" class="anchored" data-anchor-id="statistiques-sur-les-kpis-des-slbs-et-filtrage-des-données"><span class="header-section-number">4.2</span> Statistiques sur les KPIs des SLBs et filtrage des données</h2>
 <p>Nous commençons par ressortir la proportion des SLBs dont les dates d’observation de tous les KPIs sont antérieures au 01er octobre 2026.</p>
 <div class="cell">
 <div class="cell-output-display">
@@ -738,7 +738,7 @@ ul.task-list li input[type="checkbox"] {
 </div>
 </div>
 <p>Sur les 353 SLBs obtenus précédemment, seuls 298 disposent d’un mécanisme de récompenses/pénalité affectant les cash-flow de l’obligation et d’informations suffisamment fournis sur les récompenses et les pénalités en cas de non atteinte des SPTs.</p>
-<p>Pour la suite, nous excluons les 45 autres SLBs. Enfin, nous ressortons la proportion des SLBs libellées en dollars US ou euros EUR, et disposant d’un historique de prix.</p>
+<p>Pour la suite, nous excluons les 45 autres SLBs. Puis, nous ressortons la proportion des SLBs libellées en dollars US ou euros EUR, et disposant d’un historique de prix.</p>
 <div class="cell">
 <div class="cell-output-display">
 <table class="table caption-top table-sm table-striped small">
@@ -765,7 +765,26 @@ ul.task-list li input[type="checkbox"] {
 </div>
 </div>
 <p>Sur les 298 SLBs précédents, seuls 156 sont libellés en USD ou en EUR, et disposent d’un historique de prix.</p>
-<p>Nous excluons les 142 autres SLBs.</p>
+<p>Nous excluons les 142 autres SLBs. Enfin, nous ressortons des 156 SLBs sélectionnés la proportion de ceux qui disposent d’un historique de prix avant et après la date d’observation d’atteinte de l’objectif SPT. Un SLB dispose d’un historique de prix avant et après cette date si et seulement s’il existe au moins 3 prix mensuels avant et après la date d’observation d’atteinte de l’objectif SPT.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">SLBs have at least 3 monthly prices around SPT obs date</th>
+<th data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">SLBs have less than 3 monthly prices around SPT obs date</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">156</td>
+<td style="text-align: right;">0</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>Tous les 156 SLBs disposent d’un historique de prix avant et après la date d’observation d’atteinte de l’objectif SPT. Donc nous les conservons.</p>
 </section>
 <section id="construction-finale-des-bases-de-données" class="level2" data-number="4.3">
 <h2 data-number="4.3" class="anchored" data-anchor-id="construction-finale-des-bases-de-données"><span class="header-section-number">4.3</span> Construction finale des bases de données</h2>

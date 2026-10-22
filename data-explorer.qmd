@@ -341,7 +341,7 @@ SLB_bonds |>
 ```
 
 
-## Statistiques sur les KPIs des SLBs
+## Statistiques sur les KPIs des SLBs et filtrage des données
 
 Nous commençons par ressortir la proportion des SLBs dont les dates d'observation de tous les KPIs sont antérieures au 01er octobre 2026.
 
@@ -474,7 +474,7 @@ SLB_kpis |>
 
 Sur les 353 SLBs obtenus précédemment, seuls 298 disposent d'un mécanisme de récompenses/pénalité affectant les cash-flow de l'obligation et d'informations suffisamment fournis sur les récompenses et les pénalités en cas de non atteinte des SPTs.
 
-Pour la suite, nous excluons les 45 autres SLBs. Enfin, nous ressortons la proportion des SLBs libellées en dollars US ou euros EUR, et disposant d'un historique de prix.
+Pour la suite, nous excluons les 45 autres SLBs. Puis, nous ressortons la proportion des SLBs libellées en dollars US ou euros EUR, et disposant d'un historique de prix.
 
 ```{r}
 #| echo: false
@@ -550,7 +550,97 @@ SLB_kpis |>
 
 Sur les 298 SLBs précédents, seuls 156 sont libellés en USD ou en EUR, et disposent d'un historique de prix.
 
-Nous excluons les 142 autres SLBs.
+Nous excluons les 142 autres SLBs. Enfin, nous ressortons des 156 SLBs sélectionnés la proportion de ceux qui disposent d'un historique de prix avant et après la date d'observation d'atteinte de l'objectif SPT. Un SLB dispose d'un historique de prix avant et après cette date si et seulement s'il existe au moins 3 prix mensuels avant et après la date d'observation d'atteinte de l'objectif SPT.
+
+```{r}
+#| echo: false
+#| warning: false
+
+prices_tmp = SLB_kpis |>
+  mutate(
+    observation_passed = as.logical(as.numeric(observation_date) <= as.numeric(f01_oct_date))
+  ) |>
+  group_by(cusip_id) |>
+  filter(all(observation_passed) == T) |>
+  ungroup() |>
+  mutate(
+    has_spt_achievement_info = as.logical(!is.na(spt_achieved) | (!is.na(spt_value) & !is.na(spt_observed_val)))
+  ) |>
+  group_by(cusip_id) |>
+  filter(all(has_spt_achievement_info) == T) |>
+  ungroup() |>
+  left_join(
+    SLB_infos |> select(cusip_id, bond_modification_mechanism),
+    by = c("cusip_id")
+  ) |>
+  mutate(
+    slb_cashflow_modified_by_spt = as.logical(bond_modification_mechanism %in% c("Modification of the coupon", "Premium Payment")),
+    stepupdw_val_provided = as.logical(!is.na(bp_increase) | !is.na(bp_decrease)),
+    stepupdw_effective_dt_provided = as.logical(
+      (bond_modification_mechanism == "Modification of the coupon" & (!is.na(coupon_step_effective_dt) | !is.na(coupon_step_payment_dt))) |
+      (bond_modification_mechanism == "Premium Payment")
+    ),
+    stepupdw_data_provived = as.logical(stepupdw_val_provided & stepupdw_effective_dt_provided)
+  ) |>
+  group_by(cusip_id) |>
+  filter(all(slb_cashflow_modified_by_spt) == T & all(stepupdw_data_provived) == T) |>
+  ungroup() |>
+  left_join(
+    SLB_bonds |> select(cusip_id, currency),
+    by = c("cusip_id")
+  ) |>
+  mutate(
+    interest_currency = as.logical(currency %in% c("USD", "EUR")),
+    cusip_cid = stringr::str_to_upper(cusip_id)
+  ) |>
+  left_join(
+    SLB_prices,
+    by = join_by(cusip_cid == cusip_id),
+    relationship = "many-to-many"
+  ) |>
+  group_by(cusip_id) |>
+  filter(all(interest_currency) == T & any(!is.na(price)) == T) |>
+  ungroup() |>
+  select(cusip_id, cusip_cid, price_date = date, price)
+
+p <- SLB_kpis |>
+  distinct(cusip_id, observation_date) |>
+  filter(cusip_id %in% unique(prices_tmp$cusip_id)) |>
+  left_join(
+    prices_tmp,
+    by = c("cusip_id"),
+    multiple = "all",
+    relationship = "many-to-many"
+  ) |>
+  summarise(
+    has_enough_prices = as.logical(
+      sum(as.numeric(price_date) <= as.numeric(observation_date)) >= 3 & # Prices before obs date
+        sum(as.numeric(price_date) > as.numeric(observation_date)) >= 3 # Prices after obs date
+    ),
+    .by = c("cusip_id", "observation_date")
+  ) |>
+  summarise(
+    has_enough_prices = all(has_enough_prices) == T,
+    .by = c("cusip_id")
+  ) |>
+  summarise(c = n(), .by = c("has_enough_prices")) |>
+  pivot_wider(names_from = has_enough_prices, values_from = c) |>
+  bind_cols(tibble(`FALSE`=0)) |>
+  rename(
+    "SLBs have at least 3 monthly prices around SPT obs date" = `TRUE`,
+    "SLBs have less than 3 monthly prices around SPT obs date" = `FALSE`
+  ) |>
+  kable() |>
+  kable_styling() |> 
+  row_spec(0, bold = T)
+
+rm(list = c("prices_tmp"))  
+
+p
+```
+
+
+Tous les 156 SLBs disposent d'un historique de prix avant et après la date d'observation d'atteinte de l'objectif SPT. Donc nous les conservons.
 
 
 ## Construction finale des bases de données
