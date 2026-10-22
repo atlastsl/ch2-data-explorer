@@ -619,13 +619,14 @@ SLB_f_kpis <- SLB_kpis |>
   filter(cusip_id %in% cusip_flist)
 ```
 
+
 **Base de données finale des caractéristiques SLBs**
 
 ```{r}
 #| echo: false
 #| warning: false
 
-kable(head(SLB_f_bonds))
+summary((SLB_f_bonds |> mutate(currency = as.factor(currency)))[, c("cusip_id", "issue_date", "maturity", "coupon", "currency")])
 ```
 
 **Base de données finale des KPIs**
@@ -634,7 +635,7 @@ kable(head(SLB_f_bonds))
 #| echo: false
 #| warning: false
 
-kable(head(SLB_f_kpis))
+summary(SLB_f_kpis[, c("cusip_id", "bp_increase", "bp_decrease", "spt_achieved")])
 ```
 
 **Base de données finale des prix**
@@ -643,7 +644,7 @@ kable(head(SLB_f_kpis))
 #| echo: false
 #| warning: false
 
-kable(head(SLB_f_prices))
+summary(SLB_f_prices)
 ```
 
 

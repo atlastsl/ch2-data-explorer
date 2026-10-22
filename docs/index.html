@@ -624,7 +624,7 @@ ul.task-list li input[type="checkbox"] {
 <li>La répartition des devises en lesquelles sont libellées les obligations;</li>
 <li>La répartition des types de pénalités/récompenses associés aux obligations.</li>
 </ul>
-<div class="cell quarto-layout-panel" data-layout-ncol="2" data-layout-nrow="2">
+<div class="cell quarto-layout-panel" data-layout-nrow="2" data-layout-ncol="2">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: flex-start;">
 <div class="quarto-figure quarto-figure-center">
@@ -772,413 +772,55 @@ ul.task-list li input[type="checkbox"] {
 <p>Nous construisons les bases de données finales uniquement sur la base des 156 SLBs ayant passé tous les filtres précédents.</p>
 <p><strong>Base de données finale des caractéristiques SLBs</strong></p>
 <div class="cell">
-<div class="cell-output-display">
-<table class="caption-top table table-sm table-striped small">
-<colgroup>
-<col style="width: 1%">
-<col style="width: 2%">
-<col style="width: 5%">
-<col style="width: 1%">
-<col style="width: 2%">
-<col style="width: 16%">
-<col style="width: 3%">
-<col style="width: 1%">
-<col style="width: 2%">
-<col style="width: 4%">
-<col style="width: 2%">
-<col style="width: 1%">
-<col style="width: 1%">
-<col style="width: 29%">
-<col style="width: 3%">
-<col style="width: 2%">
-<col style="width: 6%">
-<col style="width: 5%">
-<col style="width: 6%">
-</colgroup>
-<thead>
-<tr class="header">
-<th style="text-align: left;">cusip</th>
-<th style="text-align: left;">cusip_id</th>
-<th style="text-align: left;">issuer</th>
-<th style="text-align: left;">ticker</th>
-<th style="text-align: left;">issue_date</th>
-<th style="text-align: left;">kpis</th>
-<th style="text-align: left;">moody_init_rating</th>
-<th style="text-align: left;">coupon</th>
-<th style="text-align: left;">maturity</th>
-<th style="text-align: left;">series</th>
-<th style="text-align: left;">bbg_composite</th>
-<th style="text-align: left;">mty_type</th>
-<th style="text-align: left;">currency</th>
-<th style="text-align: left;">desc_notes</th>
-<th style="text-align: left;">selection_of_kpi</th>
-<th style="text-align: left;">kpi_association</th>
-<th style="text-align: left;">icma_principles_alignd_indicator</th>
-<th style="text-align: left;">bond_modification_mechanism</th>
-<th style="text-align: left;">sustainability_linked_metrc_scre</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">BO0866331</td>
-<td style="text-align: left;">BO0866331 Corp</td>
-<td style="text-align: left;">H&amp;M Finance BV</td>
-<td style="text-align: left;">HMBSS</td>
-<td style="text-align: left;">2021-02-25</td>
-<td style="text-align: left;">Raw Material Sourcing &amp; Recycling (Circular Economy) Climate Change (GHG Emissions &amp; Energy)</td>
-<td style="text-align: left;">NA</td>
-<td style="text-align: left;">0.25</td>
-<td style="text-align: left;">2029-08-25</td>
-<td style="text-align: left;">EMTN</td>
-<td style="text-align: left;">NR</td>
-<td style="text-align: left;">CALLABLE</td>
-<td style="text-align: left;">EUR</td>
-<td style="text-align: left;">STEP-UP MARGIN: AUG 2026 MAX 25BP, STEP-UP EVENT: REF YEAR 2025 RECYCLED MATERIALS PERCENTAGE</td>
-<td style="text-align: left;">TRUE</td>
-<td style="text-align: left;">Per KPI</td>
-<td style="text-align: left;">TRUE</td>
-<td style="text-align: left;">Modification of the coupon</td>
-<td style="text-align: left;">ESG Metric</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">BO5182908</td>
-<td style="text-align: left;">BO5182908 Corp</td>
-<td style="text-align: left;">Koninklijke Ahold Delhaize NV</td>
-<td style="text-align: left;">ADNA</td>
-<td style="text-align: left;">2021-03-18</td>
-<td style="text-align: left;">Climate Change (GHG Emissions &amp; Energy) Waste</td>
-<td style="text-align: left;">Baa1</td>
-<td style="text-align: left;">0.375</td>
-<td style="text-align: left;">2030-03-18</td>
-<td style="text-align: left;">#N/A Field Not Applicable</td>
-<td style="text-align: left;">BBB+</td>
-<td style="text-align: left;">CALLABLE</td>
-<td style="text-align: left;">EUR</td>
-<td style="text-align: left;">STEP-UP MARGIN: 25 BP FROM MARCH 2026, STEP-UP EVENT: CARBON EMISSION REDUCTION - CO2 EMISSION REDUCTION - FOOD WASTE REDUCTION</td>
-<td style="text-align: left;">TRUE</td>
-<td style="text-align: left;">Combined</td>
-<td style="text-align: left;">TRUE</td>
-<td style="text-align: left;">Modification of the coupon</td>
-<td style="text-align: left;">ESG Metric</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">BO4570236</td>
-<td style="text-align: left;">BO4570236 Corp</td>
-<td style="text-align: left;">Public Power Corp SA</td>
-<td style="text-align: left;">PPCGA</td>
-<td style="text-align: left;">2021-03-18</td>
-<td style="text-align: left;">Climate Change (GHG Emissions &amp; Energy)</td>
-<td style="text-align: left;">NA</td>
-<td style="text-align: left;">4.375</td>
-<td style="text-align: left;">2026-03-30</td>
-<td style="text-align: left;">#N/A Field Not Applicable</td>
-<td style="text-align: left;">NR</td>
-<td style="text-align: left;">CALLABLE</td>
-<td style="text-align: left;">EUR</td>
-<td style="text-align: left;">STEP-UP MARGIN: 50BP, STEP-UP EVENT: FAILURE TO REDUCE ISSUER’S CO2 EMISSIONS BY 40% BY DEC-22, FROM 2019 BASE YEAR. TARGET MISSED. PENALTY EFFECTIVE: 10/02/23.</td>
-<td style="text-align: left;">TRUE</td>
-<td style="text-align: left;">Per KPI</td>
-<td style="text-align: left;">TRUE</td>
-<td style="text-align: left;">Modification of the coupon</td>
-<td style="text-align: left;">ESG Metric</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">BO6047878</td>
-<td style="text-align: left;">BO6047878 Corp</td>
-<td style="text-align: left;">Japfa Comfeed Indonesia Tbk PT</td>
-<td style="text-align: left;">JPFAIJ</td>
-<td style="text-align: left;">2021-03-23</td>
-<td style="text-align: left;">Water (incl.&nbsp;Ocean)</td>
-<td style="text-align: left;">NA</td>
-<td style="text-align: left;">5.375</td>
-<td style="text-align: left;">2026-03-23</td>
-<td style="text-align: left;">#N/A Field Not Applicable</td>
-<td style="text-align: left;">NR</td>
-<td style="text-align: left;">CALLABLE</td>
-<td style="text-align: left;">USD</td>
-<td style="text-align: left;">STEP-UP MARGIN:25BP, STEP-UP EVENT:FAILURE TO SATISFY SPT ON 3MTHS PRIOR TO YR4. OR, FAIL OR INABILITY TO DELIVER THE SATISFACTION CERTIFICATE TO TRUSTEE.</td>
-<td style="text-align: left;">TRUE</td>
-<td style="text-align: left;">Combined</td>
-<td style="text-align: left;">TRUE</td>
-<td style="text-align: left;">Modification of the coupon</td>
-<td style="text-align: left;">ESG Metric</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">BO7234723</td>
-<td style="text-align: left;">BO7234723 Corp</td>
-<td style="text-align: left;">Public Power Corp SA</td>
-<td style="text-align: left;">PPCGA</td>
-<td style="text-align: left;">2021-03-24</td>
-<td style="text-align: left;">Climate Change (GHG Emissions &amp; Energy)</td>
-<td style="text-align: left;">NA</td>
-<td style="text-align: left;">3.875</td>
-<td style="text-align: left;">2026-03-30</td>
-<td style="text-align: left;">MAR</td>
-<td style="text-align: left;">NA</td>
-<td style="text-align: left;">CALLABLE</td>
-<td style="text-align: left;">EUR</td>
-<td style="text-align: left;">FUNGED WITH SECURITY XS2314265237 ON OR AROUND 05/03/2021.</td>
-<td style="text-align: left;">TRUE</td>
-<td style="text-align: left;">Per KPI</td>
-<td style="text-align: left;">TRUE</td>
-<td style="text-align: left;">Modification of the coupon</td>
-<td style="text-align: left;">ESG Metric</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">83419MAA0</td>
-<td style="text-align: left;">83419MAA0 Corp</td>
-<td style="text-align: left;">Aris Water Holdings LLC</td>
-<td style="text-align: left;">ARIS</td>
-<td style="text-align: left;">2021-04-01</td>
-<td style="text-align: left;">Water (incl.&nbsp;Ocean)</td>
-<td style="text-align: left;">B3</td>
-<td style="text-align: left;">7.625</td>
-<td style="text-align: left;">2026-04-01</td>
-<td style="text-align: left;">144A</td>
-<td style="text-align: left;">NR</td>
-<td style="text-align: left;">CALLABLE</td>
-<td style="text-align: left;">USD</td>
-<td style="text-align: left;">STEP-UP MARGIN: 25BP, STEP-UP EVENT: APRIL 2025, 85% OF ALL BARRELS OF WATER SOLD WILL BE BARRELS OF RECYCLED PRODUCED WATER.</td>
-<td style="text-align: left;">TRUE</td>
-<td style="text-align: left;">Per KPI</td>
-<td style="text-align: left;">TRUE</td>
-<td style="text-align: left;">Modification of the coupon</td>
-<td style="text-align: left;">ESG Metric</td>
-</tr>
-</tbody>
-</table>
+<div class="cell-output cell-output-stdout">
+<pre><code>   cusip_id           issue_date                     maturity                  
+ Length:156         Min.   :2021-02-25 00:00:00   Min.   :2024-04-22 00:00:00  
+ Class :character   1st Qu.:2021-07-07 00:00:00   1st Qu.:2027-04-26 18:00:00  
+ Mode  :character   Median :2021-11-09 00:00:00   Median :2028-11-15 00:00:00  
+                    Mean   :2022-02-01 04:46:09   Mean   :2028-11-21 08:00:00  
+                    3rd Qu.:2022-04-26 06:00:00   3rd Qu.:2029-12-01 00:00:00  
+                    Max.   :2025-03-28 00:00:00   Max.   :2035-03-15 00:00:00  
+    coupon          currency
+ Length:156         EUR:92  
+ Class :character   USD:64  
+ Mode  :character           
+                            
+                            
+                            </code></pre>
 </div>
 </div>
 <p><strong>Base de données finale des KPIs</strong></p>
 <div class="cell">
-<div class="cell-output-display">
-<table class="caption-top table table-sm table-striped small">
-<colgroup>
-<col style="width: 3%">
-<col style="width: 2%">
-<col style="width: 2%">
-<col style="width: 3%">
-<col style="width: 5%">
-<col style="width: 3%">
-<col style="width: 2%">
-<col style="width: 5%">
-<col style="width: 4%">
-<col style="width: 4%">
-<col style="width: 4%">
-<col style="width: 3%">
-<col style="width: 6%">
-<col style="width: 5%">
-<col style="width: 4%">
-<col style="width: 6%">
-<col style="width: 5%">
-<col style="width: 12%">
-<col style="width: 13%">
-</colgroup>
-<thead>
-<tr class="header">
-<th style="text-align: left;">cusip_id</th>
-<th style="text-align: right;">bp_increase</th>
-<th style="text-align: right;">bp_decrease</th>
-<th style="text-align: right;">baseline_value</th>
-<th style="text-align: left;">baseline_unit</th>
-<th style="text-align: left;">baseline_date</th>
-<th style="text-align: right;">spt_value</th>
-<th style="text-align: left;">spt_unit</th>
-<th style="text-align: left;">observation_date</th>
-<th style="text-align: right;">spt_observed_val</th>
-<th style="text-align: left;">spt_observed_unit</th>
-<th style="text-align: left;">spt_achieved</th>
-<th style="text-align: left;">coupon_step_effective_dt</th>
-<th style="text-align: left;">coupon_step_payment_dt</th>
-<th style="text-align: left;">certification_dt</th>
-<th style="text-align: right;">sustainability_lnk_rpt_item</th>
-<th style="text-align: left;">benchmark_approach</th>
-<th style="text-align: left;">kpi_theme</th>
-<th style="text-align: left;">spt_description</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">BO0866331 Corp</td>
-<td style="text-align: right;">10</td>
-<td style="text-align: right;">NA</td>
-<td style="text-align: right;">NA</td>
-<td style="text-align: left;">NA</td>
-<td style="text-align: left;">NA</td>
-<td style="text-align: right;">30</td>
-<td style="text-align: left;">%</td>
-<td style="text-align: left;">2025-12-31</td>
-<td style="text-align: right;">32.00</td>
-<td style="text-align: left;">%</td>
-<td style="text-align: left;">TRUE</td>
-<td style="text-align: left;">2026-08-25</td>
-<td style="text-align: left;">2027-08-25</td>
-<td style="text-align: left;">NA</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: left;">NA</td>
-<td style="text-align: left;">Raw Material Sourcing &amp; Recycling (Circular Economy)</td>
-<td style="text-align: left;">Sustainable/recyclable raw materials used in production</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">BO0866331 Corp</td>
-<td style="text-align: right;">5</td>
-<td style="text-align: right;">NA</td>
-<td style="text-align: right;">63690.00</td>
-<td style="text-align: left;">tons of CO2e</td>
-<td style="text-align: left;">2017-12-31</td>
-<td style="text-align: right;">-20</td>
-<td style="text-align: left;">% change</td>
-<td style="text-align: left;">2025-12-31</td>
-<td style="text-align: right;">-33.79</td>
-<td style="text-align: left;">% change</td>
-<td style="text-align: left;">TRUE</td>
-<td style="text-align: left;">2026-08-25</td>
-<td style="text-align: left;">2027-08-25</td>
-<td style="text-align: left;">NA</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: left;">NA</td>
-<td style="text-align: left;">Climate Change (GHG Emissions &amp; Energy)</td>
-<td style="text-align: left;">Scope 1 &amp; 2 (market based) GHG emissions (absolute)</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">BO0866331 Corp</td>
-<td style="text-align: right;">10</td>
-<td style="text-align: right;">NA</td>
-<td style="text-align: right;">13479100.00</td>
-<td style="text-align: left;">tons of CO2e</td>
-<td style="text-align: left;">2017-12-31</td>
-<td style="text-align: right;">-10</td>
-<td style="text-align: left;">% change</td>
-<td style="text-align: left;">2025-12-31</td>
-<td style="text-align: right;">-63.91</td>
-<td style="text-align: left;">% change</td>
-<td style="text-align: left;">TRUE</td>
-<td style="text-align: left;">2026-08-25</td>
-<td style="text-align: left;">2027-08-25</td>
-<td style="text-align: left;">NA</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: left;">NA</td>
-<td style="text-align: left;">Climate Change (GHG Emissions &amp; Energy)</td>
-<td style="text-align: left;">Scope 3 GHG emissions (absolute)</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">BO5182908 Corp</td>
-<td style="text-align: right;">25</td>
-<td style="text-align: right;">NA</td>
-<td style="text-align: right;">3658.00</td>
-<td style="text-align: left;">kilotonnes CO2e</td>
-<td style="text-align: left;">2018-12-31</td>
-<td style="text-align: right;">-29</td>
-<td style="text-align: left;">% change</td>
-<td style="text-align: left;">2025-12-28</td>
-<td style="text-align: right;">39.00</td>
-<td style="text-align: left;">% change</td>
-<td style="text-align: left;">TRUE</td>
-<td style="text-align: left;">2026-03-18</td>
-<td style="text-align: left;">2027-03-18</td>
-<td style="text-align: left;">NA</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: left;">Science based - SBTi</td>
-<td style="text-align: left;">Climate Change (GHG Emissions &amp; Energy)</td>
-<td style="text-align: left;">Scope 1 &amp; 2 GHG emissions (absolute)</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">BO5182908 Corp</td>
-<td style="text-align: right;">25</td>
-<td style="text-align: right;">NA</td>
-<td style="text-align: right;">5.48</td>
-<td style="text-align: left;">tonnes / million EUR</td>
-<td style="text-align: left;">2016-12-31</td>
-<td style="text-align: right;">-32</td>
-<td style="text-align: left;">% change / million EUR</td>
-<td style="text-align: left;">2025-12-28</td>
-<td style="text-align: right;">39.10</td>
-<td style="text-align: left;">% change</td>
-<td style="text-align: left;">TRUE</td>
-<td style="text-align: left;">2026-03-18</td>
-<td style="text-align: left;">2027-03-18</td>
-<td style="text-align: left;">NA</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: left;">NA</td>
-<td style="text-align: left;">Waste</td>
-<td style="text-align: left;">Food waste</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">BO4570236 Corp</td>
-<td style="text-align: right;">50</td>
-<td style="text-align: right;">NA</td>
-<td style="text-align: right;">23150000.00</td>
-<td style="text-align: left;">tonnes of CO2e</td>
-<td style="text-align: left;">2019-12-31</td>
-<td style="text-align: right;">-40</td>
-<td style="text-align: left;">% change</td>
-<td style="text-align: left;">2022-12-31</td>
-<td style="text-align: right;">-36.00</td>
-<td style="text-align: left;">% change</td>
-<td style="text-align: left;">FALSE</td>
-<td style="text-align: left;">2023-03-30</td>
-<td style="text-align: left;">2024-03-30</td>
-<td style="text-align: left;">NA</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: left;">NA</td>
-<td style="text-align: left;">Climate Change (GHG Emissions &amp; Energy)</td>
-<td style="text-align: left;">Scope 1 GHG emissions (absolute)</td>
-</tr>
-</tbody>
-</table>
+<div class="cell-output cell-output-stdout">
+<pre><code>   cusip_id          bp_increase     bp_decrease  spt_achieved   
+ Length:254         Min.   : 2.50   Min.   : NA   Mode :logical  
+ Class :character   1st Qu.:12.50   1st Qu.: NA   FALSE:59       
+ Mode  :character   Median :22.00   Median : NA   TRUE :195      
+                    Mean   :22.58   Mean   :NaN                  
+                    3rd Qu.:25.00   3rd Qu.: NA                  
+                    Max.   :75.00   Max.   : NA                  
+                                    NA's   :254                  </code></pre>
 </div>
 </div>
 <p><strong>Base de données finale des prix</strong></p>
 <div class="cell">
-<div class="cell-output-display">
-<table class="caption-top table table-sm table-striped small">
-<thead>
-<tr class="header">
-<th style="text-align: left;">cusip_cid</th>
-<th style="text-align: left;">cusip_id</th>
-<th style="text-align: left;">date</th>
-<th style="text-align: right;">price</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">00775CAB2 CORP</td>
-<td style="text-align: left;">00775CAB2 Corp</td>
-<td style="text-align: left;">2020-01-31</td>
-<td style="text-align: right;">NA</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">00775CAB2 CORP</td>
-<td style="text-align: left;">00775CAB2 Corp</td>
-<td style="text-align: left;">2020-01-31</td>
-<td style="text-align: right;">NA</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">00775CAB2 CORP</td>
-<td style="text-align: left;">00775CAB2 Corp</td>
-<td style="text-align: left;">2020-01-31</td>
-<td style="text-align: right;">NA</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">00775CAB2 CORP</td>
-<td style="text-align: left;">00775CAB2 Corp</td>
-<td style="text-align: left;">2020-02-28</td>
-<td style="text-align: right;">NA</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">00775CAB2 CORP</td>
-<td style="text-align: left;">00775CAB2 Corp</td>
-<td style="text-align: left;">2020-02-28</td>
-<td style="text-align: right;">NA</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">00775CAB2 CORP</td>
-<td style="text-align: left;">00775CAB2 Corp</td>
-<td style="text-align: left;">2020-02-28</td>
-<td style="text-align: right;">NA</td>
-</tr>
-</tbody>
-</table>
+<div class="cell-output cell-output-stdout">
+<pre><code>  cusip_cid           cusip_id              date                    
+ Length:20574       Length:20574       Min.   :2020-01-31 00:00:00  
+ Class :character   Class :character   1st Qu.:2021-09-30 00:00:00  
+ Mode  :character   Mode  :character   Median :2023-05-31 00:00:00  
+                                       Mean   :2023-05-31 05:20:00  
+                                       3rd Qu.:2025-01-31 00:00:00  
+                                       Max.   :2026-09-30 00:00:00  
+                                                                    
+     price       
+ Min.   : 15.88  
+ 1st Qu.: 89.34  
+ Median : 96.06  
+ Mean   : 94.47  
+ 3rd Qu.:100.00  
+ Max.   :162.99  
+ NA's   :7848    </code></pre>
 </div>
 </div>
 
