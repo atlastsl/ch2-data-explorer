@@ -1,0 +1,1595 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.38">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Aurélien Simo">
+
+<title>Fiche de statistiques descriptives des données sur les SLB</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-ece42c8223ec2bf36298a08f122c9a68.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script src="site_libs/kePrint-0.0.1/kePrint.js"></script>
+
+<link href="site_libs/lightable-0.0.1/lightable.css" rel="stylesheet">
+
+
+
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="floating quarto-light">
+
+<div id="quarto-search-results"></div>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <nav id="TOC" role="doc-toc" class="toc-active" data-toc-expanded="99">
+    <h2 id="toc-title">Table des matières</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction"><span class="header-section-number">1</span> Introduction</a></li>
+  <li><a href="#bases-de-données" id="toc-bases-de-données" class="nav-link" data-scroll-target="#bases-de-données"><span class="header-section-number">2</span> Bases de données</a></li>
+  <li><a href="#chargement-des-données" id="toc-chargement-des-données" class="nav-link" data-scroll-target="#chargement-des-données"><span class="header-section-number">3</span> Chargement des données</a></li>
+  <li><a href="#statistiques-descriptives" id="toc-statistiques-descriptives" class="nav-link" data-scroll-target="#statistiques-descriptives"><span class="header-section-number">4</span> Statistiques descriptives</a>
+  <ul class="collapse">
+  <li><a href="#caractéristiques-des-slbs" id="toc-caractéristiques-des-slbs" class="nav-link" data-scroll-target="#caractéristiques-des-slbs"><span class="header-section-number">4.1</span> Caractéristiques des SLBs</a></li>
+  <li><a href="#statistiques-sur-les-kpis-des-slbs" id="toc-statistiques-sur-les-kpis-des-slbs" class="nav-link" data-scroll-target="#statistiques-sur-les-kpis-des-slbs"><span class="header-section-number">4.2</span> Statistiques sur les KPIs des SLBs</a></li>
+  <li><a href="#construction-finale-des-bases-de-données" id="toc-construction-finale-des-bases-de-données" class="nav-link" data-scroll-target="#construction-finale-des-bases-de-données"><span class="header-section-number">4.3</span> Construction finale des bases de données</a></li>
+  </ul></li>
+  </ul>
+</nav>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Fiche de statistiques descriptives des données sur les SLB</h1>
+</div>
+
+
+<div class="quarto-title-meta-author">
+  <div class="quarto-title-meta-heading">Author</div>
+  <div class="quarto-title-meta-heading">Affiliation</div>
+  
+    <div class="quarto-title-meta-contents">
+    <p class="author">Aurélien Simo <a href="mailto:aurelien-yannick.simo-fotso.1@ulaval.ca" class="quarto-title-author-email"><i class="bi bi-envelope"></i></a> </p>
+  </div>
+  <div class="quarto-title-meta-contents">
+        <p class="affiliation">
+            Département de FAI, FSA, Université Laval
+          </p>
+      </div>
+  </div>
+
+<div class="quarto-title-meta">
+
+      
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="introduction" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> Introduction</h1>
+<p>Dans cette fiche de notes, nous décrivons la base de données collectée sur les SLBs (Sustainability Linked Bonds), dans le but d’orienter adéquatement la question de recherche du chapitre 2 de la thèse.</p>
+</section>
+<section id="bases-de-données" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> Bases de données</h1>
+<p>Les données ont été collectées via le terminal Bloomberg. Elles sont organisées en quatre bases de données:</p>
+<ul>
+<li>La <strong>base de données des obligations</strong>, qui comporte l’ensemble des caractéristiques génériques des SLBs en tant qu’obligations (identifiants, entité émettrice, date d’émission, taux de coupon, maturité, type de maturité, note Moody’s, note composite Bloomberg, devise dans laquelle est libellée l’obligation, une description courte sur les spécificités du contrat SLB).</li>
+<li>La <strong>base de données des caractéristiques SLB</strong>, qui comporte l’ensemble des caractéristiques particulières associées à des SLBs, pour les obligations collectées. En l’état, ces caractéristiques sont nombreuses. Toutefois, les plus importantes à relever sont:
+<ul>
+<li>le respect du processus de sélection des KPI établi par l’ICMA (<code>selection_of_kpi</code>);</li>
+<li>le mécanisme de déclenchement des pénalités ou des récompenses selon les KPI (<code>kpi_association</code>);</li>
+<li>l’alignement du SLB avec les principes de l’ICMA (<code>icma_principles_alignd_indicator</code>);</li>
+<li>le type de pénalité ou de récompense en cas d’échec (<code>bond_modification_mechanism</code>);</li>
+<li>le type de KPIs sur lesquels le SLB est construit (<code>sustainability_linked_metrc_scre</code>).</li>
+</ul></li>
+<li>La <strong>base de données des KPI associés aux SLB</strong>, qui comporte l’ensemble des indicateurs clés de performance sur lesquels les SLBs sont construit. Pour chaque KPI, nous avons:
+<ul>
+<li>L’identifiant du SLB associé;</li>
+<li>Le thème associé au SLB et une description;</li>
+<li>La mesure (en pts de base) de la pénalité ou de la récompense en cas de non atteinte ou d’atteinte de l’objectif fixé pour le KPI;</li>
+<li>La valeur de référence de l’indicateur sur laquelle l’objectif fixé en % est calculé;</li>
+<li>La valeur cible de l’objectif (Sustainability performance target) et la date à laquelle la cible doit être atteinte (date d’observation);</li>
+<li>La valeur observée de l’indicateur à la date d’observation;</li>
+<li>Une indicatrice (Vrai ou Faux) d’objectif atteint (calculé sur la base de la valeur cible et de la valeur observée du KPI)</li>
+</ul></li>
+<li>La <strong>base de données des prix des obligations</strong>, qui comporte l’ensemble des prix de clôture annuels des SLB collectés, entre janvier 2020 et septembre 2026.</li>
+</ul>
+</section>
+<section id="chargement-des-données" class="level1" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> Chargement des données</h1>
+<p>Nous commençons par charger les données sur les caractéristiques générales des obligations.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 3%">
+<col style="width: 4%">
+<col style="width: 5%">
+<col style="width: 2%">
+<col style="width: 3%">
+<col style="width: 3%">
+<col style="width: 5%">
+<col style="width: 5%">
+<col style="width: 3%">
+<col style="width: 2%">
+<col style="width: 4%">
+<col style="width: 3%">
+<col style="width: 2%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">cusip</th>
+<th style="text-align: left;">cusip_id</th>
+<th style="text-align: left;">issuer</th>
+<th style="text-align: left;">ticker</th>
+<th style="text-align: left;">issue_date</th>
+<th style="text-align: left;">kpis</th>
+<th style="text-align: left;">moody_init_rating</th>
+<th style="text-align: left;">coupon</th>
+<th style="text-align: left;">maturity</th>
+<th style="text-align: left;">series</th>
+<th style="text-align: left;">bbg_composite</th>
+<th style="text-align: left;">mty_type</th>
+<th style="text-align: left;">currency</th>
+<th style="text-align: left;">desc_notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">EK8790637</td>
+<td style="text-align: left;">EK8790637 Corp</td>
+<td style="text-align: left;">Ihsan Sukuk Bhd</td>
+<td style="text-align: left;">KNBZMK</td>
+<td style="text-align: left;">2015-06-18</td>
+<td style="text-align: left;">Other</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">4.3</td>
+<td style="text-align: left;">2022-06-17</td>
+<td style="text-align: left;">IMTN</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">AT MATURITY</td>
+<td style="text-align: left;">MYR</td>
+<td style="text-align: left;">STEP-DOWN: PROPOSED 100BPS ON PRINCIPLE REPAYMENT. SPTS: INDIVIDUAL SCHOOL’S PERFORMANCE IN TERMS OF QUALITY OF EDUCATION PROVIDED.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">AO3505242</td>
+<td style="text-align: left;">AO3505242 Corp</td>
+<td style="text-align: left;">Ihsan Sukuk Bhd</td>
+<td style="text-align: left;">KNBZMK</td>
+<td style="text-align: left;">2017-08-08</td>
+<td style="text-align: left;">Other</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">4.5999999999999996</td>
+<td style="text-align: left;">2024-08-08</td>
+<td style="text-align: left;">IMTN</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">AT MATURITY</td>
+<td style="text-align: left;">MYR</td>
+<td style="text-align: left;">INCLUDES RETAIL TRANCHE=MYR5MM.STEP-DOWN:40BPS.SPTS:(1)NO. OF SCHLS SCALED UP,(2)TEACHERS’ PROCIENCY,(3)ENABLING LEANRING ENV IN SCHLS,(4)STUDENT PROFICIENCY.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">ZS6974621</td>
+<td style="text-align: left;">ZS6974621 Corp</td>
+<td style="text-align: left;">Duerr AG</td>
+<td style="text-align: left;">DUEGR</td>
+<td style="text-align: left;">2019-07-04</td>
+<td style="text-align: left;">ESG Score</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">2029-07-04</td>
+<td style="text-align: left;">10Y</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">AT MATURITY</td>
+<td style="text-align: left;">EUR</td>
+<td style="text-align: left;">PRICING STEPS UP BY 2BPS IF SUSTAINABILITY SCORE &lt;=40. PRICING STEPS DOWN BY 2BPS IF &gt;=62</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">ZS6974936</td>
+<td style="text-align: left;">ZS6974936 Corp</td>
+<td style="text-align: left;">Duerr AG</td>
+<td style="text-align: left;">DUEGR</td>
+<td style="text-align: left;">2019-07-04</td>
+<td style="text-align: left;">ESG Score</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">2027-07-04</td>
+<td style="text-align: left;">8YFX</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">AT MATURITY</td>
+<td style="text-align: left;">EUR</td>
+<td style="text-align: left;">PRICING STEPS UP BY 2BPS IF SUSTAINABILITY SCORE &lt;=40. PRICING STEPS DOWN BY 2BPS IF &gt;=62</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">ZS6974944</td>
+<td style="text-align: left;">ZS6974944 Corp</td>
+<td style="text-align: left;">Duerr AG</td>
+<td style="text-align: left;">DUEGR</td>
+<td style="text-align: left;">2019-07-04</td>
+<td style="text-align: left;">ESG Score</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">2025-07-04</td>
+<td style="text-align: left;">6YFX</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">AT MATURITY</td>
+<td style="text-align: left;">EUR</td>
+<td style="text-align: left;">PRICING STEPS UP BY 2BPS IF SUSTAINABILITY SCORE &lt;=40. PRICING STEPS DOWN BY 2BPS IF &gt;=62</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">ZS6974969</td>
+<td style="text-align: left;">ZS6974969 Corp</td>
+<td style="text-align: left;">Duerr AG</td>
+<td style="text-align: left;">DUEGR</td>
+<td style="text-align: left;">2019-07-04</td>
+<td style="text-align: left;">ESG Score</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">2024-07-04</td>
+<td style="text-align: left;">5YFX</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">AT MATURITY</td>
+<td style="text-align: left;">EUR</td>
+<td style="text-align: left;">PRICING STEPS UP BY 2BPS IF SUSTAINABILITY SCORE &lt;=40. PRICING STEPS DOWN BY 2BPS IF &gt;=62</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>Nous chargeons ensuite les données sur les caractéristiques SLB</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 23%">
+<col style="width: 19%">
+<col style="width: 23%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">cusip_id</th>
+<th style="text-align: left;">selection_of_kpi</th>
+<th style="text-align: left;">kpi_association</th>
+<th style="text-align: left;">icma_principles_alignd_indicator</th>
+<th style="text-align: left;">bond_modification_mechanism</th>
+<th style="text-align: left;">sustainability_linked_metrc_scre</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">EK8790637 Corp</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">Combined</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">Modification of the coupon</td>
+<td style="text-align: left;">ESG Metric</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">AO3505242 Corp</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">Combined</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">Modification of the coupon</td>
+<td style="text-align: left;">ESG Metric</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">ZS6974621 Corp</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">ESG Score</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">ZS6974936 Corp</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">ESG Score</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">ZS6974944 Corp</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">ESG Score</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">ZS6974969 Corp</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">ESG Score</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>Puis, nous chargeons les données sur les KPIs des SLBs.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 4%">
+<col style="width: 3%">
+<col style="width: 3%">
+<col style="width: 4%">
+<col style="width: 4%">
+<col style="width: 4%">
+<col style="width: 3%">
+<col style="width: 3%">
+<col style="width: 5%">
+<col style="width: 5%">
+<col style="width: 5%">
+<col style="width: 4%">
+<col style="width: 8%">
+<col style="width: 7%">
+<col style="width: 5%">
+<col style="width: 9%">
+<col style="width: 6%">
+<col style="width: 3%">
+<col style="width: 5%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">cusip_id</th>
+<th style="text-align: right;">bp_increase</th>
+<th style="text-align: right;">bp_decrease</th>
+<th style="text-align: right;">baseline_value</th>
+<th style="text-align: left;">baseline_unit</th>
+<th style="text-align: left;">baseline_date</th>
+<th style="text-align: right;">spt_value</th>
+<th style="text-align: left;">spt_unit</th>
+<th style="text-align: left;">observation_date</th>
+<th style="text-align: right;">spt_observed_val</th>
+<th style="text-align: left;">spt_observed_unit</th>
+<th style="text-align: left;">spt_achieved</th>
+<th style="text-align: left;">coupon_step_effective_dt</th>
+<th style="text-align: left;">coupon_step_payment_dt</th>
+<th style="text-align: left;">certification_dt</th>
+<th style="text-align: right;">sustainability_lnk_rpt_item</th>
+<th style="text-align: left;">benchmark_approach</th>
+<th style="text-align: left;">kpi_theme</th>
+<th style="text-align: left;">spt_description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">EK8790637 Corp</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">100</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: left;">facilities</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">2022-06-17</td>
+<td style="text-align: left;">2022-06-17</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">Other</td>
+<td style="text-align: left;">Other</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">EK8790637 Corp</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">100</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">50</td>
+<td style="text-align: left;">%</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">2022-06-17</td>
+<td style="text-align: left;">2022-06-17</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">Other</td>
+<td style="text-align: left;">Other</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">EK8790637 Corp</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">100</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">50</td>
+<td style="text-align: left;">%</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">2022-06-17</td>
+<td style="text-align: left;">2022-06-17</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">Other</td>
+<td style="text-align: left;">Other</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">EK8790637 Corp</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">100</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">50</td>
+<td style="text-align: left;">%</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">2022-06-17</td>
+<td style="text-align: left;">2022-06-17</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">Other</td>
+<td style="text-align: left;">Other</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">AO3505242 Corp</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">40</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: left;">facilities</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">2023-08-08</td>
+<td style="text-align: left;">2024-08-08</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">Other</td>
+<td style="text-align: left;">Other</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">AO3505242 Corp</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">40</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">50</td>
+<td style="text-align: left;">%</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">2023-08-08</td>
+<td style="text-align: left;">2024-08-08</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">Other</td>
+<td style="text-align: left;">Other</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>Enfin, nous chargeons les données sur les prix des SLBs.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">date</th>
+<th style="text-align: left;">cusip_id</th>
+<th style="text-align: right;">price</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">2020-01-31</td>
+<td style="text-align: left;">BN9953165 CORP</td>
+<td style="text-align: right;">NA</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2020-01-31</td>
+<td style="text-align: left;">BO0411690 CORP</td>
+<td style="text-align: right;">NA</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2020-01-31</td>
+<td style="text-align: left;">BO0866331 CORP</td>
+<td style="text-align: right;">NA</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2020-01-31</td>
+<td style="text-align: left;">BN4942759 CORP</td>
+<td style="text-align: right;">NA</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2020-01-31</td>
+<td style="text-align: left;">BN4943351 CORP</td>
+<td style="text-align: right;">NA</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2020-01-31</td>
+<td style="text-align: left;">BN4943443 CORP</td>
+<td style="text-align: right;">NA</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<section id="statistiques-descriptives" class="level1" data-number="4">
+<h1 data-number="4"><span class="header-section-number">4</span> Statistiques descriptives</h1>
+<section id="caractéristiques-des-slbs" class="level2" data-number="4.1">
+<h2 data-number="4.1" class="anchored" data-anchor-id="caractéristiques-des-slbs"><span class="header-section-number">4.1</span> Caractéristiques des SLBs</h2>
+<p>Nous agrégeons les données sur les caractéristiques générales et les caractéristiques SLB, et nous ressortons:</p>
+<ul>
+<li>La distribution des années d’émissions des obligations;</li>
+<li>La répartition des obligations échues vs non échues vs perpétuelles à date du 01er octobre 2026;</li>
+<li>La répartition des devises en lesquelles sont libellées les obligations;</li>
+<li>La répartition des types de pénalités/récompenses associés aux obligations.</li>
+</ul>
+<div class="cell quarto-layout-panel" data-layout-ncol="2" data-layout-nrow="2">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: flex-start;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="data-explorer_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption>Quantités de SLBs émis par an entre 2015 et 2026</figcaption>
+</figure>
+</div>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: flex-start;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="data-explorer_files/figure-html/unnamed-chunk-5-2.png" class="img-fluid figure-img" width="672"></p>
+<figcaption>Status d’échéances des SLBs à date du 01er octobre 2026</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: flex-start;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="data-explorer_files/figure-html/unnamed-chunk-5-3.png" class="img-fluid figure-img" width="672"></p>
+<figcaption>Répartition des dévises en lesquelles sont libellées les SLBs émis</figcaption>
+</figure>
+</div>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: flex-start;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="data-explorer_files/figure-html/unnamed-chunk-5-4.png" class="img-fluid figure-img" width="672"></p>
+<figcaption>Répartition des mécanismes de pénalité/récompenses des SLBs émis</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="statistiques-sur-les-kpis-des-slbs" class="level2" data-number="4.2">
+<h2 data-number="4.2" class="anchored" data-anchor-id="statistiques-sur-les-kpis-des-slbs"><span class="header-section-number">4.2</span> Statistiques sur les KPIs des SLBs</h2>
+<p>Nous commençons par ressortir la proportion des SLBs dont les dates d’observation de tous les KPIs sont antérieures au 01er octobre 2026.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">Observation date in future</th>
+<th data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">Observation date passed</th>
+<th data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">Observation date not provided</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">606</td>
+<td style="text-align: right;">480</td>
+<td style="text-align: right;">432</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>Seuls 480 titres de dette disposent d’indicateurs de performance (KPIs) déjà observables (et observées en principe) à date du 01er octobre.</p>
+<p>Pour la suite, nous excluons les SLBs dont les dates d’observation se situent après le 01er octobre 2026 ou sont non fournies. Nous ressortons ensuite la proportion des SLBs dont les informations concernant l’atteinte de l’objectif SPT pour tous les KPIs sont disponibles.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">SPT achievements for all KPI are known</th>
+<th data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">SPT achievements for some or all KPI are not known</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">353</td>
+<td style="text-align: right;">127</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>Pour 353 SLBs parmi ceux dont les dates d’observation des KPI sont passées, les informations concernant l’atteinte de l’objectif SPT pour tous les KPIs sont disponibles. Par contre, pour 127 SLBs, les informations concernant l’atteinte de l’objectif SPT pour tout ou partie des KPIs ne sont pas disponibles.</p>
+<p>Pour la suite, nous excluons les SLBs dont une partie des informations concernant l’atteinte de l’objectif SPT n’est pas disponible. Nous ressortons de l’ensemble des SLBs filtré la proportion des SLBs dont:</p>
+<ul>
+<li>Le mécanisme de pénalité/récompense est la modification du coupon ou le paiement d’un premium sur la valeur faciale à l’échéance;</li>
+<li>Les valeurs de récompense/pénalités (en points de base) sont fournies, et les dates de modification (application des récompenses/pénalités) sont fournies.</li>
+</ul>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th" style="text-align: left; font-weight: bold;"></th>
+<th data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">Coupon is modified or premium is paid</th>
+<th data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">Other penalty/reward mechanism</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left; font-weight: bold;">Step up/step down data (values and eff dates) are provided</td>
+<td style="text-align: right;">298</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="even">
+<td style="text-align: left; font-weight: bold;">Step up/step down data (values and eff dates) are not provided</td>
+<td style="text-align: right;">41</td>
+<td style="text-align: right;">14</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>Sur les 353 SLBs obtenus précédemment, seuls 298 disposent d’un mécanisme de récompenses/pénalité affectant les cash-flow de l’obligation et d’informations suffisamment fournis sur les récompenses et les pénalités en cas de non atteinte des SPTs.</p>
+<p>Pour la suite, nous excluons les 45 autres SLBs. Enfin, nous ressortons la proportion des SLBs libellées en dollars US ou euros EUR, et disposant d’un historique de prix.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th" style="text-align: left; font-weight: bold;"></th>
+<th data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">Currency is USD or EUR</th>
+<th data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">Currency is not USD nor EUR</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left; font-weight: bold;">Price history is provided</td>
+<td style="text-align: right;">156</td>
+<td style="text-align: right;">111</td>
+</tr>
+<tr class="even">
+<td style="text-align: left; font-weight: bold;">Price history is not provided</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">21</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>Sur les 298 SLBs précédents, seuls 156 sont libellés en USD ou en EUR, et disposent d’un historique de prix.</p>
+<p>Nous excluons les 142 autres SLBs.</p>
+</section>
+<section id="construction-finale-des-bases-de-données" class="level2" data-number="4.3">
+<h2 data-number="4.3" class="anchored" data-anchor-id="construction-finale-des-bases-de-données"><span class="header-section-number">4.3</span> Construction finale des bases de données</h2>
+<p>Nous construisons les bases de données finales uniquement sur la base des 156 SLBs ayant passé tous les filtres précédents.</p>
+<p><strong>Base de données finale des caractéristiques SLBs</strong></p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 1%">
+<col style="width: 2%">
+<col style="width: 5%">
+<col style="width: 1%">
+<col style="width: 2%">
+<col style="width: 16%">
+<col style="width: 3%">
+<col style="width: 1%">
+<col style="width: 2%">
+<col style="width: 4%">
+<col style="width: 2%">
+<col style="width: 1%">
+<col style="width: 1%">
+<col style="width: 29%">
+<col style="width: 3%">
+<col style="width: 2%">
+<col style="width: 6%">
+<col style="width: 5%">
+<col style="width: 6%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">cusip</th>
+<th style="text-align: left;">cusip_id</th>
+<th style="text-align: left;">issuer</th>
+<th style="text-align: left;">ticker</th>
+<th style="text-align: left;">issue_date</th>
+<th style="text-align: left;">kpis</th>
+<th style="text-align: left;">moody_init_rating</th>
+<th style="text-align: left;">coupon</th>
+<th style="text-align: left;">maturity</th>
+<th style="text-align: left;">series</th>
+<th style="text-align: left;">bbg_composite</th>
+<th style="text-align: left;">mty_type</th>
+<th style="text-align: left;">currency</th>
+<th style="text-align: left;">desc_notes</th>
+<th style="text-align: left;">selection_of_kpi</th>
+<th style="text-align: left;">kpi_association</th>
+<th style="text-align: left;">icma_principles_alignd_indicator</th>
+<th style="text-align: left;">bond_modification_mechanism</th>
+<th style="text-align: left;">sustainability_linked_metrc_scre</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">BO0866331</td>
+<td style="text-align: left;">BO0866331 Corp</td>
+<td style="text-align: left;">H&amp;M Finance BV</td>
+<td style="text-align: left;">HMBSS</td>
+<td style="text-align: left;">2021-02-25</td>
+<td style="text-align: left;">Raw Material Sourcing &amp; Recycling (Circular Economy) Climate Change (GHG Emissions &amp; Energy)</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">0.25</td>
+<td style="text-align: left;">2029-08-25</td>
+<td style="text-align: left;">EMTN</td>
+<td style="text-align: left;">NR</td>
+<td style="text-align: left;">CALLABLE</td>
+<td style="text-align: left;">EUR</td>
+<td style="text-align: left;">STEP-UP MARGIN: AUG 2026 MAX 25BP, STEP-UP EVENT: REF YEAR 2025 RECYCLED MATERIALS PERCENTAGE</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">Per KPI</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">Modification of the coupon</td>
+<td style="text-align: left;">ESG Metric</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">BO5182908</td>
+<td style="text-align: left;">BO5182908 Corp</td>
+<td style="text-align: left;">Koninklijke Ahold Delhaize NV</td>
+<td style="text-align: left;">ADNA</td>
+<td style="text-align: left;">2021-03-18</td>
+<td style="text-align: left;">Climate Change (GHG Emissions &amp; Energy) Waste</td>
+<td style="text-align: left;">Baa1</td>
+<td style="text-align: left;">0.375</td>
+<td style="text-align: left;">2030-03-18</td>
+<td style="text-align: left;">#N/A Field Not Applicable</td>
+<td style="text-align: left;">BBB+</td>
+<td style="text-align: left;">CALLABLE</td>
+<td style="text-align: left;">EUR</td>
+<td style="text-align: left;">STEP-UP MARGIN: 25 BP FROM MARCH 2026, STEP-UP EVENT: CARBON EMISSION REDUCTION - CO2 EMISSION REDUCTION - FOOD WASTE REDUCTION</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">Combined</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">Modification of the coupon</td>
+<td style="text-align: left;">ESG Metric</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">BO4570236</td>
+<td style="text-align: left;">BO4570236 Corp</td>
+<td style="text-align: left;">Public Power Corp SA</td>
+<td style="text-align: left;">PPCGA</td>
+<td style="text-align: left;">2021-03-18</td>
+<td style="text-align: left;">Climate Change (GHG Emissions &amp; Energy)</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">4.375</td>
+<td style="text-align: left;">2026-03-30</td>
+<td style="text-align: left;">#N/A Field Not Applicable</td>
+<td style="text-align: left;">NR</td>
+<td style="text-align: left;">CALLABLE</td>
+<td style="text-align: left;">EUR</td>
+<td style="text-align: left;">STEP-UP MARGIN: 50BP, STEP-UP EVENT: FAILURE TO REDUCE ISSUER’S CO2 EMISSIONS BY 40% BY DEC-22, FROM 2019 BASE YEAR. TARGET MISSED. PENALTY EFFECTIVE: 10/02/23.</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">Per KPI</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">Modification of the coupon</td>
+<td style="text-align: left;">ESG Metric</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">BO6047878</td>
+<td style="text-align: left;">BO6047878 Corp</td>
+<td style="text-align: left;">Japfa Comfeed Indonesia Tbk PT</td>
+<td style="text-align: left;">JPFAIJ</td>
+<td style="text-align: left;">2021-03-23</td>
+<td style="text-align: left;">Water (incl.&nbsp;Ocean)</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">5.375</td>
+<td style="text-align: left;">2026-03-23</td>
+<td style="text-align: left;">#N/A Field Not Applicable</td>
+<td style="text-align: left;">NR</td>
+<td style="text-align: left;">CALLABLE</td>
+<td style="text-align: left;">USD</td>
+<td style="text-align: left;">STEP-UP MARGIN:25BP, STEP-UP EVENT:FAILURE TO SATISFY SPT ON 3MTHS PRIOR TO YR4. OR, FAIL OR INABILITY TO DELIVER THE SATISFACTION CERTIFICATE TO TRUSTEE.</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">Combined</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">Modification of the coupon</td>
+<td style="text-align: left;">ESG Metric</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">BO7234723</td>
+<td style="text-align: left;">BO7234723 Corp</td>
+<td style="text-align: left;">Public Power Corp SA</td>
+<td style="text-align: left;">PPCGA</td>
+<td style="text-align: left;">2021-03-24</td>
+<td style="text-align: left;">Climate Change (GHG Emissions &amp; Energy)</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">3.875</td>
+<td style="text-align: left;">2026-03-30</td>
+<td style="text-align: left;">MAR</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">CALLABLE</td>
+<td style="text-align: left;">EUR</td>
+<td style="text-align: left;">FUNGED WITH SECURITY XS2314265237 ON OR AROUND 05/03/2021.</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">Per KPI</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">Modification of the coupon</td>
+<td style="text-align: left;">ESG Metric</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">83419MAA0</td>
+<td style="text-align: left;">83419MAA0 Corp</td>
+<td style="text-align: left;">Aris Water Holdings LLC</td>
+<td style="text-align: left;">ARIS</td>
+<td style="text-align: left;">2021-04-01</td>
+<td style="text-align: left;">Water (incl.&nbsp;Ocean)</td>
+<td style="text-align: left;">B3</td>
+<td style="text-align: left;">7.625</td>
+<td style="text-align: left;">2026-04-01</td>
+<td style="text-align: left;">144A</td>
+<td style="text-align: left;">NR</td>
+<td style="text-align: left;">CALLABLE</td>
+<td style="text-align: left;">USD</td>
+<td style="text-align: left;">STEP-UP MARGIN: 25BP, STEP-UP EVENT: APRIL 2025, 85% OF ALL BARRELS OF WATER SOLD WILL BE BARRELS OF RECYCLED PRODUCED WATER.</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">Per KPI</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">Modification of the coupon</td>
+<td style="text-align: left;">ESG Metric</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p><strong>Base de données finale des KPIs</strong></p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 3%">
+<col style="width: 2%">
+<col style="width: 2%">
+<col style="width: 3%">
+<col style="width: 5%">
+<col style="width: 3%">
+<col style="width: 2%">
+<col style="width: 5%">
+<col style="width: 4%">
+<col style="width: 4%">
+<col style="width: 4%">
+<col style="width: 3%">
+<col style="width: 6%">
+<col style="width: 5%">
+<col style="width: 4%">
+<col style="width: 6%">
+<col style="width: 5%">
+<col style="width: 12%">
+<col style="width: 13%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">cusip_id</th>
+<th style="text-align: right;">bp_increase</th>
+<th style="text-align: right;">bp_decrease</th>
+<th style="text-align: right;">baseline_value</th>
+<th style="text-align: left;">baseline_unit</th>
+<th style="text-align: left;">baseline_date</th>
+<th style="text-align: right;">spt_value</th>
+<th style="text-align: left;">spt_unit</th>
+<th style="text-align: left;">observation_date</th>
+<th style="text-align: right;">spt_observed_val</th>
+<th style="text-align: left;">spt_observed_unit</th>
+<th style="text-align: left;">spt_achieved</th>
+<th style="text-align: left;">coupon_step_effective_dt</th>
+<th style="text-align: left;">coupon_step_payment_dt</th>
+<th style="text-align: left;">certification_dt</th>
+<th style="text-align: right;">sustainability_lnk_rpt_item</th>
+<th style="text-align: left;">benchmark_approach</th>
+<th style="text-align: left;">kpi_theme</th>
+<th style="text-align: left;">spt_description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">BO0866331 Corp</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">30</td>
+<td style="text-align: left;">%</td>
+<td style="text-align: left;">2025-12-31</td>
+<td style="text-align: right;">32.00</td>
+<td style="text-align: left;">%</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">2026-08-25</td>
+<td style="text-align: left;">2027-08-25</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">Raw Material Sourcing &amp; Recycling (Circular Economy)</td>
+<td style="text-align: left;">Sustainable/recyclable raw materials used in production</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">BO0866331 Corp</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">63690.00</td>
+<td style="text-align: left;">tons of CO2e</td>
+<td style="text-align: left;">2017-12-31</td>
+<td style="text-align: right;">-20</td>
+<td style="text-align: left;">% change</td>
+<td style="text-align: left;">2025-12-31</td>
+<td style="text-align: right;">-33.79</td>
+<td style="text-align: left;">% change</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">2026-08-25</td>
+<td style="text-align: left;">2027-08-25</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">Climate Change (GHG Emissions &amp; Energy)</td>
+<td style="text-align: left;">Scope 1 &amp; 2 (market based) GHG emissions (absolute)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">BO0866331 Corp</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">13479100.00</td>
+<td style="text-align: left;">tons of CO2e</td>
+<td style="text-align: left;">2017-12-31</td>
+<td style="text-align: right;">-10</td>
+<td style="text-align: left;">% change</td>
+<td style="text-align: left;">2025-12-31</td>
+<td style="text-align: right;">-63.91</td>
+<td style="text-align: left;">% change</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">2026-08-25</td>
+<td style="text-align: left;">2027-08-25</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">Climate Change (GHG Emissions &amp; Energy)</td>
+<td style="text-align: left;">Scope 3 GHG emissions (absolute)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">BO5182908 Corp</td>
+<td style="text-align: right;">25</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">3658.00</td>
+<td style="text-align: left;">kilotonnes CO2e</td>
+<td style="text-align: left;">2018-12-31</td>
+<td style="text-align: right;">-29</td>
+<td style="text-align: left;">% change</td>
+<td style="text-align: left;">2025-12-28</td>
+<td style="text-align: right;">39.00</td>
+<td style="text-align: left;">% change</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">2026-03-18</td>
+<td style="text-align: left;">2027-03-18</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">Science based - SBTi</td>
+<td style="text-align: left;">Climate Change (GHG Emissions &amp; Energy)</td>
+<td style="text-align: left;">Scope 1 &amp; 2 GHG emissions (absolute)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">BO5182908 Corp</td>
+<td style="text-align: right;">25</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">5.48</td>
+<td style="text-align: left;">tonnes / million EUR</td>
+<td style="text-align: left;">2016-12-31</td>
+<td style="text-align: right;">-32</td>
+<td style="text-align: left;">% change / million EUR</td>
+<td style="text-align: left;">2025-12-28</td>
+<td style="text-align: right;">39.10</td>
+<td style="text-align: left;">% change</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">2026-03-18</td>
+<td style="text-align: left;">2027-03-18</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">Waste</td>
+<td style="text-align: left;">Food waste</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">BO4570236 Corp</td>
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">23150000.00</td>
+<td style="text-align: left;">tonnes of CO2e</td>
+<td style="text-align: left;">2019-12-31</td>
+<td style="text-align: right;">-40</td>
+<td style="text-align: left;">% change</td>
+<td style="text-align: left;">2022-12-31</td>
+<td style="text-align: right;">-36.00</td>
+<td style="text-align: left;">% change</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">2023-03-30</td>
+<td style="text-align: left;">2024-03-30</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: left;">Climate Change (GHG Emissions &amp; Energy)</td>
+<td style="text-align: left;">Scope 1 GHG emissions (absolute)</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p><strong>Base de données finale des prix</strong></p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">cusip_cid</th>
+<th style="text-align: left;">cusip_id</th>
+<th style="text-align: left;">date</th>
+<th style="text-align: right;">price</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">00775CAB2 CORP</td>
+<td style="text-align: left;">00775CAB2 Corp</td>
+<td style="text-align: left;">2020-01-31</td>
+<td style="text-align: right;">NA</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">00775CAB2 CORP</td>
+<td style="text-align: left;">00775CAB2 Corp</td>
+<td style="text-align: left;">2020-01-31</td>
+<td style="text-align: right;">NA</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">00775CAB2 CORP</td>
+<td style="text-align: left;">00775CAB2 Corp</td>
+<td style="text-align: left;">2020-01-31</td>
+<td style="text-align: right;">NA</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">00775CAB2 CORP</td>
+<td style="text-align: left;">00775CAB2 Corp</td>
+<td style="text-align: left;">2020-02-28</td>
+<td style="text-align: right;">NA</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">00775CAB2 CORP</td>
+<td style="text-align: left;">00775CAB2 Corp</td>
+<td style="text-align: left;">2020-02-28</td>
+<td style="text-align: right;">NA</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">00775CAB2 CORP</td>
+<td style="text-align: left;">00775CAB2 Corp</td>
+<td style="text-align: left;">2020-02-28</td>
+<td style="text-align: right;">NA</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
