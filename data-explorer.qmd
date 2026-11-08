@@ -873,7 +873,7 @@ SLB_final_db <- SLB_kpis_merged |>
   mutate(
     rl_bp_increase = if_else(coupon == 0 | is.na(coupon), NA, (bp_increase/coupon)),
     rl_bp_decrease = if_else(coupon == 0 | is.na(coupon), NA, (bp_decrease/coupon)),
-    spt_failed_dum = as.numeric(spt_achieved == F),
+    spt_failed_dum = if_else(spt_achieved == T, if_else(rl_bp_decrease > 0, -1, 0), if_else(rl_bp_increase > 0, 1, 0)),
     spt_pnlt_rwrd_num = if_else(spt_achieved, -rl_bp_decrease, rl_bp_increase)
   ) |>
   relocate(rl_bp_increase, .after = bp_decrease) |>
@@ -961,17 +961,10 @@ Nous construisons des graphiques qui renseignent sur l'évolution des rendements
 ```{r}
 #| echo: false
 #| warning: false
-#| layout-ncol: 1
-#| layout-nrow: 3
-#| fig-subcap:
-#| - "KPI's SPT achieved SLBs"
-#| - "KPI's SPT not achived SLBs"
-#| - "All SLBs"
 #| fig-cap: "Monthly SLB returns around KPI observation date"
 
-
-SLB_final_mprc_db |>
-  filter(spt_failed_dum == 0) |>
+db_plot <- SLB_final_mprc_db |>
+  filter(spt_failed_dum <= 0) |>
   summarise(
     q5 = quantile(ret, 0.05, na.rm = T),
     med = median(ret, na.rm = T),
@@ -979,70 +972,49 @@ SLB_final_mprc_db |>
     q95 = quantile(ret, 0.95, na.rm = T),
     .by = c("post_obs_date_num")
   ) |>
-  ggplot(aes(x = post_obs_date_num)) +
-  geom_ribbon(aes(ymin = q5, ymax = q95), fill = "deepskyblue", alpha = 0.15) +
-  geom_line(aes(y = q5), color = "deepskyblue3", linetype = "dashed", linewidth = 0.5) +
-  geom_line(aes(y = q95), color = "deepskyblue3", linetype = "dashed", linewidth = 0.5) +
-  geom_line(aes(y = avg), color = "navyblue", linewidth = 1) +
-  geom_vline(xintercept = 0, color = "red", linetype = "dashed", size = 1) +
-  geom_text(
-    aes(x = 0, y = max(q95), label = "Observation date"), 
-    color = "red", angle = 90, vjust = -0.5, hjust = 1
-  ) +
-  labs(
-    x = "Months after/before KPI observation date",
-    y = "Mean SLB returns"
-  ) +
-  theme_minimal()
-
-SLB_final_mprc_db |>
-  filter(spt_failed_dum == 1) |>
-  summarise(
-    q5 = quantile(ret, 0.05, na.rm = T),
-    med = median(ret, na.rm = T),
-    avg = mean(ret, na.rm = T),
-    q95 = quantile(ret, 0.95, na.rm = T),
-    .by = c("post_obs_date_num")
+  mutate(
+    group = "KPI's SPT achieved SLBs"
   ) |>
-  ggplot(aes(x = post_obs_date_num)) +
-  geom_ribbon(aes(ymin = q5, ymax = q95), fill = "deepskyblue", alpha = 0.15) +
-  geom_line(aes(y = q5), color = "deepskyblue3", linetype = "dashed", linewidth = 0.5) +
-  geom_line(aes(y = q95), color = "deepskyblue3", linetype = "dashed", linewidth = 0.5) +
-  geom_line(aes(y = avg), color = "navyblue", linewidth = 1) +
-  geom_vline(xintercept = 0, color = "red", linetype = "dashed", size = 1) +
-  geom_text(
-    aes(x = 0, y = max(q95), label = "Observation date"), 
-    color = "red", angle = 90, vjust = -0.5, hjust = 1
-  ) +
-  labs(
-    x = "Months after/before KPI observation date",
-    y = "Mean SLB returns"
-  ) +
-  theme_minimal()
+  bind_rows(
+    SLB_final_mprc_db |>
+    filter(spt_failed_dum > 0) |>
+    summarise(
+      q5 = quantile(ret, 0.05, na.rm = T),
+      med = median(ret, na.rm = T),
+      avg = mean(ret, na.rm = T),
+      q95 = quantile(ret, 0.95, na.rm = T),
+      .by = c("post_obs_date_num")
+    ) |>
+    mutate(
+      group = "KPI's SPT not achived SLBs"
+    )
+  )
 
-SLB_final_mprc_db |>
-  summarise(
-    q5 = quantile(ret, 0.05, na.rm = T),
-    med = median(ret, na.rm = T),
-    avg = mean(ret, na.rm = T),
-    q95 = quantile(ret, 0.95, na.rm = T),
-    .by = c("post_obs_date_num")
-  ) |>
-  ggplot(aes(x = post_obs_date_num)) +
-  geom_ribbon(aes(ymin = q5, ymax = q95), fill = "deepskyblue", alpha = 0.15) +
-  geom_line(aes(y = q5), color = "deepskyblue3", linetype = "dashed", linewidth = 0.5) +
-  geom_line(aes(y = q95), color = "deepskyblue3", linetype = "dashed", linewidth = 0.5) +
-  geom_line(aes(y = avg), color = "navyblue", linewidth = 1) +
-  geom_vline(xintercept = 0, color = "red", linetype = "dashed", size = 1) +
-  geom_text(
-    aes(x = 0, y = max(q95), label = "Observation date"), 
+db_plot |>
+  ggplot(aes(x = post_obs_date_num, group = group)) +
+  geom_ribbon(aes(ymin = q5, ymax = q95, fill = group), alpha = 0.15) +
+  geom_line(aes(y = q5,  color = group), linetype = "dashed", linewidth = 0.5) +
+  geom_line(aes(y = q95, color = group), linetype = "dashed", linewidth = 0.5) +
+  geom_line(aes(y = avg, color = group), linewidth = 1) +
+  geom_vline(xintercept = 0, color = "red", linetype = "dashed", linewidth = 1) +
+  annotate(
+    "text", x = 0, y = max(db_plot$q95), label = "Observation date",
     color = "red", angle = 90, vjust = -0.5, hjust = 1
   ) +
-  labs(
-    x = "Months after/before KPI observation date",
-    y = "Mean SLB returns"
+  scale_color_manual(
+    values = c("KPI's SPT achieved SLBs" = "navyblue", "KPI's SPT not achived SLBs" = "darkorange3"), 
+    name = NULL
   ) +
-  theme_minimal()
+  scale_fill_manual(
+    values = c("KPI's SPT achieved SLBs" = "navyblue", "KPI's SPT not achived SLBs" = "darkorange3"), 
+    name = NULL
+  ) +
+  labs(
+    x = "Time after/before KPI observation date",
+    y = "Mean stock returns"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
 
 ```
 
@@ -1061,17 +1033,10 @@ Nous confirmons l'importance de cette intervalle autour de la date d'observation
 ```{r}
 #| echo: false
 #| warning: false
-#| layout-ncol: 1
-#| layout-nrow: 3
-#| fig-subcap:
-#| - "KPI's SPT achieved SLBs"
-#| - "KPI's SPT not achived SLBs"
-#| - "All SLBs"
 #| fig-cap: "Weekly SLB returns around KPI observation date"
 
-
-SLB_final_wprc_db |>
-  filter(spt_failed_dum == 0) |>
+db_plot <- SLB_final_wprc_db |>
+  filter(spt_failed_dum <= 0) |>
   summarise(
     q5 = quantile(ret, 0.05, na.rm = T),
     med = median(ret, na.rm = T),
@@ -1079,70 +1044,49 @@ SLB_final_wprc_db |>
     q95 = quantile(ret, 0.95, na.rm = T),
     .by = c("post_obs_date_num")
   ) |>
-  ggplot(aes(x = post_obs_date_num)) +
-  geom_ribbon(aes(ymin = q5, ymax = q95), fill = "deepskyblue", alpha = 0.15) +
-  geom_line(aes(y = q5), color = "deepskyblue3", linetype = "dashed", linewidth = 0.5) +
-  geom_line(aes(y = q95), color = "deepskyblue3", linetype = "dashed", linewidth = 0.5) +
-  geom_line(aes(y = avg), color = "navyblue", linewidth = 1) +
-  geom_vline(xintercept = 0, color = "red", linetype = "dashed", size = 1) +
-  geom_text(
-    aes(x = 0, y = max(q95), label = "Observation date"), 
-    color = "red", angle = 90, vjust = -0.5, hjust = 1
-  ) +
-  labs(
-    x = "Weeks after/before KPI observation date",
-    y = "Mean SLB returns"
-  ) +
-  theme_minimal()
-
-SLB_final_wprc_db |>
-  filter(spt_failed_dum == 1) |>
-  summarise(
-    q5 = quantile(ret, 0.05, na.rm = T),
-    med = median(ret, na.rm = T),
-    avg = mean(ret, na.rm = T),
-    q95 = quantile(ret, 0.95, na.rm = T),
-    .by = c("post_obs_date_num")
+  mutate(
+    group = "KPI's SPT achieved SLBs"
   ) |>
-  ggplot(aes(x = post_obs_date_num)) +
-  geom_ribbon(aes(ymin = q5, ymax = q95), fill = "deepskyblue", alpha = 0.15) +
-  geom_line(aes(y = q5), color = "deepskyblue3", linetype = "dashed", linewidth = 0.5) +
-  geom_line(aes(y = q95), color = "deepskyblue3", linetype = "dashed", linewidth = 0.5) +
-  geom_line(aes(y = avg), color = "navyblue", linewidth = 1) +
-  geom_vline(xintercept = 0, color = "red", linetype = "dashed", size = 1) +
-  geom_text(
-    aes(x = 0, y = max(q95), label = "Observation date"), 
-    color = "red", angle = 90, vjust = -0.5, hjust = 1
-  ) +
-  labs(
-    x = "Weeks after/before KPI observation date",
-    y = "Mean SLB returns"
-  ) +
-  theme_minimal()
+  bind_rows(
+    SLB_final_wprc_db |>
+    filter(spt_failed_dum > 0) |>
+    summarise(
+      q5 = quantile(ret, 0.05, na.rm = T),
+      med = median(ret, na.rm = T),
+      avg = mean(ret, na.rm = T),
+      q95 = quantile(ret, 0.95, na.rm = T),
+      .by = c("post_obs_date_num")
+    ) |>
+    mutate(
+      group = "KPI's SPT not achived SLBs"
+    )
+  )
 
-SLB_final_wprc_db |>
-  summarise(
-    q5 = quantile(ret, 0.05, na.rm = T),
-    med = median(ret, na.rm = T),
-    avg = mean(ret, na.rm = T),
-    q95 = quantile(ret, 0.95, na.rm = T),
-    .by = c("post_obs_date_num")
-  ) |>
-  ggplot(aes(x = post_obs_date_num)) +
-  geom_ribbon(aes(ymin = q5, ymax = q95), fill = "deepskyblue", alpha = 0.15) +
-  geom_line(aes(y = q5), color = "deepskyblue3", linetype = "dashed", linewidth = 0.5) +
-  geom_line(aes(y = q95), color = "deepskyblue3", linetype = "dashed", linewidth = 0.5) +
-  geom_line(aes(y = avg), color = "navyblue", linewidth = 1) +
-  geom_vline(xintercept = 0, color = "red", linetype = "dashed", size = 1) +
-  geom_text(
-    aes(x = 0, y = max(q95), label = "Observation date"), 
+db_plot |>
+  ggplot(aes(x = post_obs_date_num, group = group)) +
+  geom_ribbon(aes(ymin = q5, ymax = q95, fill = group), alpha = 0.15) +
+  geom_line(aes(y = q5,  color = group), linetype = "dashed", linewidth = 0.5) +
+  geom_line(aes(y = q95, color = group), linetype = "dashed", linewidth = 0.5) +
+  geom_line(aes(y = avg, color = group), linewidth = 1) +
+  geom_vline(xintercept = 0, color = "red", linetype = "dashed", linewidth = 1) +
+  annotate(
+    "text", x = 0, y = max(db_plot$q95), label = "Observation date",
     color = "red", angle = 90, vjust = -0.5, hjust = 1
   ) +
-  labs(
-    x = "Weeks after/before KPI observation date",
-    y = "Mean SLB returns"
+  scale_color_manual(
+    values = c("KPI's SPT achieved SLBs" = "navyblue", "KPI's SPT not achived SLBs" = "darkorange3"), 
+    name = NULL
   ) +
-  theme_minimal()
+  scale_fill_manual(
+    values = c("KPI's SPT achieved SLBs" = "navyblue", "KPI's SPT not achived SLBs" = "darkorange3"), 
+    name = NULL
+  ) +
+  labs(
+    x = "Time after/before KPI observation date",
+    y = "Mean stock returns"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
 
 ```
 
@@ -1163,8 +1107,8 @@ Les tendances évolutives des rendements hebdomadaires confirment les observatio
 #| fig-cap: "Daily SLB returns around KPI observation date"
 
 
-SLB_final_dprc_db |>
-  filter(spt_failed_dum == 0) |>
+db_plot <- SLB_final_dprc_db |>
+  filter(spt_failed_dum <= 0) |>
   summarise(
     q5 = quantile(ret, 0.05, na.rm = T),
     med = median(ret, na.rm = T),
@@ -1172,73 +1116,57 @@ SLB_final_dprc_db |>
     q95 = quantile(ret, 0.95, na.rm = T),
     .by = c("post_obs_date_num")
   ) |>
-  ggplot(aes(x = post_obs_date_num)) +
-  geom_ribbon(aes(ymin = q5, ymax = q95), fill = "deepskyblue", alpha = 0.15) +
-  geom_line(aes(y = q5), color = "deepskyblue3", linetype = "dashed", linewidth = 0.5) +
-  geom_line(aes(y = q95), color = "deepskyblue3", linetype = "dashed", linewidth = 0.5) +
-  geom_line(aes(y = avg), color = "navyblue", linewidth = 1) +
-  geom_vline(xintercept = 0, color = "red", linetype = "dashed", size = 1) +
-  geom_text(
-    aes(x = 0, y = max(q95), label = "Observation date"), 
-    color = "red", angle = 90, vjust = -0.5, hjust = 1
-  ) +
-  labs(
-    x = "Days after/before KPI observation date",
-    y = "Mean SLB returns"
-  ) +
-  theme_minimal()
+  mutate(
+    group = "KPI's SPT achieved SLBs"
+  ) |>
+  bind_rows(
+    SLB_final_dprc_db |>
+    filter(spt_failed_dum > 0) |>
+    summarise(
+      q5 = quantile(ret, 0.05, na.rm = T),
+      med = median(ret, na.rm = T),
+      avg = mean(ret, na.rm = T),
+      q95 = quantile(ret, 0.95, na.rm = T),
+      .by = c("post_obs_date_num")
+    ) |>
+    mutate(
+      group = "KPI's SPT not achived SLBs"
+    )
+  )
 
-SLB_final_dprc_db |>
-  filter(spt_failed_dum == 1) |>
-  summarise(
-    q5 = quantile(ret, 0.05, na.rm = T),
-    med = median(ret, na.rm = T),
-    avg = mean(ret, na.rm = T),
-    q95 = quantile(ret, 0.95, na.rm = T),
-    .by = c("post_obs_date_num")
-  ) |>
-  ggplot(aes(x = post_obs_date_num)) +
-  geom_ribbon(aes(ymin = q5, ymax = q95), fill = "deepskyblue", alpha = 0.15) +
-  geom_line(aes(y = q5), color = "deepskyblue3", linetype = "dashed", linewidth = 0.5) +
-  geom_line(aes(y = q95), color = "deepskyblue3", linetype = "dashed", linewidth = 0.5) +
-  geom_line(aes(y = avg), color = "navyblue", linewidth = 1) +
-  geom_vline(xintercept = 0, color = "red", linetype = "dashed", size = 1) +
-  geom_text(
-    aes(x = 0, y = max(q95), label = "Observation date"), 
+db_plot |>
+  ggplot(aes(x = post_obs_date_num, group = group)) +
+  geom_ribbon(aes(ymin = q5, ymax = q95, fill = group), alpha = 0.15) +
+  geom_line(aes(y = q5,  color = group), linetype = "dashed", linewidth = 0.5) +
+  geom_line(aes(y = q95, color = group), linetype = "dashed", linewidth = 0.5) +
+  geom_line(aes(y = avg, color = group), linewidth = 1) +
+  geom_vline(xintercept = 0, color = "red", linetype = "dashed", linewidth = 1) +
+  annotate(
+    "text", x = 0, y = max(db_plot$q95), label = "Observation date",
     color = "red", angle = 90, vjust = -0.5, hjust = 1
   ) +
-  labs(
-    x = "Days after/before KPI observation date",
-    y = "Mean SLB returns"
+  scale_color_manual(
+    values = c("KPI's SPT achieved SLBs" = "navyblue", "KPI's SPT not achived SLBs" = "darkorange3"), 
+    name = NULL
   ) +
-  theme_minimal()
-
-SLB_final_dprc_db |>
-  summarise(
-    q5 = quantile(ret, 0.05, na.rm = T),
-    med = median(ret, na.rm = T),
-    avg = mean(ret, na.rm = T),
-    q95 = quantile(ret, 0.95, na.rm = T),
-    .by = c("post_obs_date_num")
-  ) |>
-  ggplot(aes(x = post_obs_date_num)) +
-  geom_ribbon(aes(ymin = q5, ymax = q95), fill = "deepskyblue", alpha = 0.15) +
-  geom_line(aes(y = q5), color = "deepskyblue3", linetype = "dashed", linewidth = 0.5) +
-  geom_line(aes(y = q95), color = "deepskyblue3", linetype = "dashed", linewidth = 0.5) +
-  geom_line(aes(y = avg), color = "navyblue", linewidth = 1) +
-  geom_vline(xintercept = 0, color = "red", linetype = "dashed", size = 1) +
-  geom_text(
-    aes(x = 0, y = max(q95), label = "Observation date"), 
-    color = "red", angle = 90, vjust = -0.5, hjust = 1
+  scale_fill_manual(
+    values = c("KPI's SPT achieved SLBs" = "navyblue", "KPI's SPT not achived SLBs" = "darkorange3"), 
+    name = NULL
   ) +
   labs(
-    x = "Days after/before KPI observation date",
-    y = "Mean SLB returns"
+    x = "Time after/before KPI observation date",
+    y = "Mean stock returns"
   ) +
-  theme_minimal()
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  facet_wrap(~ group)
 
 ```
 
+
+```{r}
+rm(list = c("db_plot"))
+```
 
 
 
@@ -1250,20 +1178,8 @@ $$
 Ret_{i,t} = \beta_0 + \beta_1 SPT\_Failed_i + \beta_2 PostObsDate_t + \beta_3 SPT\_Failed_i \times PostObsDate_t + \gamma' X_{it} + \tau_t + \epsilon_{it}
 $$
 
-
-
-
-## Spécification 1
-
-- Rendements mensuels;
-- $SPT\_Failed = \mathbb{1}_{SPT\_Achieved = No}$;
-- Fenêtre = 2 mois avant et 2 mois après.
-
-$$
-SPT\_Failed
-$$
-
 ```{r}
+library(modelsummary)
 source("./models.R")
 
 did_model_fit <- function (db_type = "month", period = "2m", sptfl_measure = "dum") {
@@ -1321,7 +1237,7 @@ did_model_fit <- function (db_type = "month", period = "2m", sptfl_measure = "du
   )
   if (period == "6m") {
     XCols <- c(
-      XCols, 
+      XCols,
       "Post_Obs_Date:Month_A3",
       "SPT_Failed:Post_Obs_Date:Month_A3",
       "Post_Obs_Date:Month_A4",
@@ -1338,44 +1254,49 @@ did_model_fit <- function (db_type = "month", period = "2m", sptfl_measure = "du
   )
 }
 
-did_model_summ <- function (fit) {
-  db <- liq_db_refiner(asset_type, att_mode)
+did_model_summ <- function (db_type) {
+  periods <- c("2m", "6m")
+  sptfl_measures <- c("dum", "pnlt")
+  sum_cn <- rep("Y = SLB Monthly Ret.", 4)
   
-  regs <- c("Normal", "Boom", "Crash", "Desert")
+  periodsN <- c("+-2 months", "+-6 months")
+  sptfl_measuresN <- c("Failure Dummy", "Coupon penalty")
+  
   my_gof <- list(
-    list("raw" = "qt.fe",    "clean" = "FE Quarters", fmt = 0),
-    list("raw" = "nobs",     "clean" = "Num.Obs.",    "fmt" = 0),
-    list("raw" = "r2.nagelkerke", "clean" = "R2 Nagel.", "fmt" = 3),
-    list("raw" = "concordance",   "clean" = "Concordance",    "fmt" = 2),
-    list("raw" = "concordance.std",   "clean" = "Concordance Std",    "fmt" = 3),
-    list("raw" = "aic",      "clean" = "AIC",         "fmt" = 1),
-    list("raw" = "bic",      "clean" = "BIC",         "fmt" = 1)
+    list("raw" = "int.obs.date",    "clean" = "Interval around obs. date", fmt = 0),
+    list("raw" = "spt.failure.indctr",    "clean" = "SPT Failure Indicator", fmt = 0),
+    list("raw" = "fixed.effects",      "clean" = "Fixed Effects",         "fmt" = 0),
+    list("raw" = "nobs",     "clean" = "Num. Obs.",    "fmt" = 0),
+    list("raw" = "r.squared", "clean" = "R2", "fmt" = 3),
+    list("raw" = "adj.r.squared",   "clean" = "Adj. R2",    "fmt" = 3),
+    list("raw" = "r2.within",   "clean" = "Within R2",    "fmt" = 3),
+    list("raw" = "r2.within.adjusted",      "clean" = "Adj. Within R2", "fmt" = 3)
   )
   
-  results <- vector(mode = "list", length = length(regs))
-  for (k in seq_along(regs)) {
-    fit_raw = liq_model_func(
-      db, 
-      regs[k], 
-      att_type = NULL, 
-      asset_type = asset_type, 
-      model_type = model_type
-    )
-    td_raw = get_estimates(fit_raw, ci_method = "wald") |>
-      filter(!str_detect(term, "^Q\\d+_\\d+"))
-    gf_raw = get_gof(fit_raw)
-    gf_raw[["qt.fe"]] = "Yes"
-    if (model_type == "cox") {
-      gf_raw[["concordance"]] = fit_raw$concordance[6]
-      gf_raw[["concordance.std"]] = fit_raw$concordance[7]
+  results <- vector(mode = "list", length = length(periods)*length(sptfl_measures))
+  k <- 1
+  for (i in seq_along(periods)) {
+    for (j in seq_along(sptfl_measures)) {
+     
+      fit = did_model_fit(
+        db_type = db_type,
+        period = periods[i],
+        sptfl_measure = sptfl_measures[j]
+      )
+      td = get_estimates(fit, ci_method = "wald") #|> filter(!str_detect(term, "^Q\\d+_\\d+"))
+      gf = get_gof(fit)
+      gf[["int.obs.date"]] = periodsN[i]
+      gf[["spt.failure.indctr"]] = sptfl_measuresN[j]
+      gf[["fixed.effects"]] = "Obs. date"
+      mod = list(tidy = td, glance = gf)
+      class(mod) <- "modelsummary_list"
+      
+      results[[k]] = mod
+      k <- k+1
     }
-    mod_raw = list(tidy = td_raw, glance = gf_raw)
-    class(mod_raw) <- "modelsummary_list"
-    
-    results[[k]] = mod_raw
   }
   
-  names(results) <- regs
+  names(results) <- sum_cn
   
   tab <- modelsummary(
     results, 
@@ -1387,27 +1308,44 @@ did_model_summ <- function (fit) {
   tab
 }
 
-fit1 <- felp_model(
-  dataset = SLB_final_wprc_db |> filter(!is.na(spt_pnlt_rwrd_num), !is.na(ret), post_obs_date_num <= 8.1, post_obs_date_num >= -7.1), 
-  Y = c("ret"), 
-  X = c(
-    "spt_pnlt_rwrd_num",
-    "post_obs_date_dum",
-    "spt_pnlt_rwrd_num:post_obs_date_dum"
-  ),
-  fe = c("obs_date"),
-  cl = c("cusip_id")
-)
-
-summary(fit1)
 ```
 
 
+## Rendements mensuels
+
+- Rendements mensuels;
+- Indicateur de non atteinte de l'objectif de durabilité $SPT\_Failed$:
+  - Indicateur binaire: $SPT\_Failed = \mathbb{1}_{SPT\_Achieved = No}$, variable binaire égale à 1 si pour une paire (SLB, Date d'observation), au point un SPT n'a pas été atteint.
+  - Indicateur de pénalité: $SPT\_Failed = \frac{StepUp}{Coupon} \times 100$, qui représente la valeur en pourcentage de l'incrément appliqué sur le coupon en cas de non atteinte de l'objectif. Si pour une paire (SLB, Date d'observation) tous les objectifs fixés ont été atteint, le step-up est nul ou négatif (si l'atteinte de l'objectif entraine un step down).
+- Fenêtres d'observation autour de la date d'observation:
+  - 2 mois avant et 2 mois après.
+  - 6 mois avant et 6 mois après.
+  
+```{r}
+did_model_summ(db_type = "month")
+```
 
 
+Sur la base des rendements mensuels, trois spécifications sur quatre suggèrent que les pénalités de hausse de coupon (step-up) causées par la non atteinte des objectifs de durabilité sont associées à un baisse des prix des SLBs sur le marché secondaire après la date d'observation, et ce, même après avoir contrôlé pour les baisses de rendements observées globalement le 3e mois après la date d'observation.
+
+Ainsi, contre-intuitivement, l'augmentation des cashflows futurs induits par les hausses de coupon des SLBs dont les objectifs ont été ratés s'accompagne d'une dépréciation de ces SLBs sur le marché secondaire.  
 
 
+## Rendements hebdomadaires
 
+- Rendements hebdomadaires;
+- Indicateur de non atteinte de l'objectif de durabilité $SPT\_Failed$:
+  - Mêmes spécifications que les rendements mensuels
+- Fenêtres d'observation autour de la date d'observation:
+  - 2 mois avant et 2 mois après.
+  - 6 mois avant et 6 mois après.
+
+```{r}
+did_model_summ(db_type = "week")
+```
+
+
+Les résultats fournis par les rendements hebdomadaires confirment les résultats fournis par les rendements mensuels. L'exception avec les rendements hebdomadaires est que seules les spécifications pour lesquelles la non atteinte de l'objectif de durabilité est mesurée par la taille de la pénalité fournissent des résultats significatifs sur la baisse des rendements après la date d'observation. 
 
 
 
