@@ -180,22 +180,49 @@ SLB_prices <- read_excel(
   "./data/SLB sep 26 v2.xlsx", 
   sheet = "Cp - SLB Ts"
 )
-SLB_prices <- SLB_prices[,!grepl("\\.\\.\\.", colnames(SLB_prices))] |>
-  filter(!is.na(Dates))
-SLB_prices <- SLB_prices |>
-  pivot_longer(
-    cols = -Dates,
-    names_to = "cusip_id",
-    values_to = "price"
-  ) |>
-  rename(date = Dates) |>
-  mutate(
-    date = as.POSIXct(date, tz = "UTC", format = "%m/%d/%Y"),
-    price = as.numeric(price)
-  )
+SLB_prices_daily <- read_excel(
+  "./data/SLB sep 26 prices daily weekly.xlsx",
+  sheet = "Daily"
+)
+SLB_prices_weekly <- read_excel(
+  "./data/SLB sep 26 prices daily weekly.xlsx",
+  sheet = "Weekly"
+)
 
-kable(head(SLB_prices))
+prefilter_prices_db <- function (prices_db) {
+  db <- prices_db[,!grepl("\\.\\.\\.", colnames(prices_db))] |>
+    filter(!is.na(Dates))
+  db <- db |>
+    pivot_longer(
+      cols = -Dates,
+      names_to = "cusip_id",
+      values_to = "price"
+    ) |>
+    rename(date = Dates) |>
+    mutate(
+      date = as.POSIXct(date, tz = "UTC", format = "%m/%d/%Y"),
+      price = as.numeric(price)
+    )
+  return(db)
+}
+
+SLB_prices <- prefilter_prices_db(SLB_prices)
+SLB_prices_daily <- prefilter_prices_db(SLB_prices_daily)
+SLB_prices_weekly <- prefilter_prices_db(SLB_prices_weekly)
+
+str(SLB_prices)
 ```
+
+
+```{r}
+str(SLB_prices_daily)
+```
+
+
+```{r}
+str(SLB_prices_weekly)
+```
+
 
 
 # Statistiques descriptives
@@ -343,6 +370,8 @@ SLB_bonds |>
 
 ## Statistiques sur les KPIs des SLBs et filtrage des données
 
+### Date d'observation des KPIs
+
 Nous commençons par ressortir la proportion des SLBs dont les dates d'observation de tous les KPIs sont antérieures au 01er octobre 2026.
 
 ```{r}
@@ -353,41 +382,69 @@ library(tinytable)
 
 SLB_kpis |>
   mutate(
-    observation_passed = as.logical(as.numeric(observation_date) <= as.numeric(f01_oct_date))
+    observation_date_provided = as.logical(!is.na(observation_date)),
+    observation_date_passed = as.logical(as.numeric(observation_date) <= as.numeric(f01_oct_date))
   ) |>
   group_by(cusip_id) |>
   summarise(
-    observation_passed = all(observation_passed)
+    observation_date_provided = all(observation_date_provided),
+    observation_date_passed_any = any(observation_date_passed),
+    observation_date_passed_all = all(observation_date_passed),
   ) |>
   ungroup() |>
-  summarise(c = n(), .by = c("observation_passed")) |>
-  pivot_wider(names_from = observation_passed, values_from = c) |>
-  rename(
-    "Observation date not provided" = `NA`,
-    "Observation date passed" = `TRUE`,
-    "Observation date in future" = `FALSE`
+  summarise(c = n(), .by = c("observation_date_provided", "observation_date_passed_any", "observation_date_passed_all")) |>
+  mutate(
+    observation_date_status = if_else(
+      observation_date_provided == F, 
+      "Not provided",
+      if_else(
+        observation_date_passed_all, 
+        "All dates passed",
+        if_else(observation_date_passed_any, "Some dates passed", "All in future")
+      )
+    )
   ) |>
+  summarise(c = sum(c), .by = c("observation_date_status")) |>
+  pivot_wider(names_from = observation_date_status, values_from = c) |>
   kable() |>
   kable_styling() |> 
   row_spec(0, bold = T)
 ```
 
 
-Seuls 480 titres de dette disposent d'indicateurs de performance (KPIs) déjà observables (et observées en principe) à date du 01er octobre. 
+  - Les dates d'observation de tous les KPIs de 480 des 1518 SLBs sont antérieures au 01er octobre 2026. Pour ces SLBs, les statuts de réalisation de tous les objectifs de durabilités associés sont censés être sus.
+  - Pour 99 SLBs, seuls quelques statuts de réalisation (pas tous) des objectifs de durabilité sont censés être sus.
+  - Les dates d'observation de 504 des 1518 SLBs sont toutes postérieures au 01er octobre. Pour ces SLBs, il est impossible de connaitre actuellement les status de réalisation des objectifs de durabilité associés.
+  - Enfin, pour 435 SLBs, nous ne disposons pas de tout ou partie des informations sur les dates d'observation des KPIs associés. Pour ces SLBs, il nous est impossible de savoir quand est-ce que la réalisation de l'objectif de durabilité sera évaluée. 
 
-Pour la suite, nous excluons les SLBs dont les dates d'observation se situent après le 01er octobre 2026 ou sont non fournies. Nous ressortons ensuite la proportion des SLBs dont les informations concernant l'atteinte de l'objectif SPT pour tous les KPIs sont disponibles.
+Pour la suite, nous excluons de notre base de données les SLBs dont il nous est actuellement impossible de savoir l'état de réalisation des objectifs de durabilité. Cela comprend les SLBs dont toutes les dates d'observation des KPIs sont absentes ou futures, soit 579 SLBs sur 1518.
+
+```{r}
+SLB_kpis_filtered = SLB_kpis |>
+  mutate(
+    observation_date_provided = as.logical(!is.na(observation_date)),
+    observation_date_passed = as.logical(as.numeric(observation_date) <= as.numeric(f01_oct_date))
+  ) |>
+  group_by(cusip_id) |>
+  filter(
+    all(observation_date_provided) &  # We keep KPI items for SLB which all observation dates are provided
+    any(observation_date_passed) &  # We keep KPI items for SLB which at least one observation date is passed
+    observation_date_passed # We keep KPI items for SLB which observation date is passed
+  ) |>
+  ungroup()
+```
+
+
+
+### Statut de réalisation des objectifs de durabilité
+
+Nous ressortons ensuite parmi les SLBs filtrés la proportion de ceux dont tous les statuts de réalisation des objectifs de durabilité (pour les objectifs dont la date d'observation est passée) sont disponibles dans les données.
 
 ```{r}
 #| echo: false
 #| warning: false
 
-SLB_kpis |>
-  mutate(
-    observation_passed = as.logical(as.numeric(observation_date) <= as.numeric(f01_oct_date))
-  ) |>
-  group_by(cusip_id) |>
-  filter(all(observation_passed) == T) |>
-  ungroup() |>
+SLB_kpis_filtered |>
   mutate(
     has_spt_achievement_info = as.logical(!is.na(spt_achieved) | (!is.na(spt_value) & !is.na(spt_observed_val)))
   ) |>
@@ -408,31 +465,35 @@ SLB_kpis |>
   
 ```
 
+Sur les 579 SLBs dont les dates d'observation d'au moins un objectif de durabilité est passée, seuls 420 disposent de données sur les statuts de réalisation des objectifs de durabilité.
 
-Pour 353 SLBs parmi ceux dont les dates d'observation des KPI sont passées, les informations concernant l'atteinte de l'objectif SPT pour tous les KPIs sont disponibles. Par contre, pour 127 SLBs, les informations concernant l'atteinte de l'objectif SPT pour tout ou partie des KPIs ne sont pas disponibles.
+Pour la suite, nous excluons les 159 autres SLBs dont les statuts de réalisation des objectifs de durabilité ne sont pas disponibles.
 
-Pour la suite, nous excluons les SLBs dont une partie des informations concernant l'atteinte de l'objectif SPT n'est pas disponible. Nous ressortons de l'ensemble des SLBs filtré la proportion des SLBs dont:
+```{r}
+SLB_kpis_filtered = SLB_kpis_filtered |>
+  mutate(
+    has_spt_achievement_info = as.logical(!is.na(spt_achieved) | (!is.na(spt_value) & !is.na(spt_observed_val)))
+  ) |>
+  group_by(cusip_id) |>
+  filter(
+    all(has_spt_achievement_info) == T # We keep KPI items for SLB which all spt achievements infos are provided
+  ) |>
+  ungroup()
+```
 
-- Le mécanisme de pénalité/récompense est la modification du coupon ou le paiement d'un premium sur la valeur faciale à l'échéance;
-- Les valeurs de récompense/pénalités (en points de base) sont fournies, et les dates de modification (application des récompenses/pénalités) sont fournies.
+
+### Mécanisme de récompense/pénalité
+
+Nous nous intéressons maintenant au mécanisme de récompense et de pénalité associé à la réalisation de l'objectif de durabilité. Nous ressortons la proportion des SLBs dont:
+
+- Le mécanisme de récompense/pénalité affecte la structure des cashflow de l'obligation: c'est-à-dire soit par modification du coupon, soit par le paiement d'une prime sur la valeur faciale de la dette à l'échéance.
+- Les valeurs de récompenses et de pénalités (en points de base) et les dates d'application de celles-ci sont fournies.
 
 ```{r}
 #| echo: false
 #| warning: false
 
-SLB_kpis |>
-  mutate(
-    observation_passed = as.logical(as.numeric(observation_date) <= as.numeric(f01_oct_date))
-  ) |>
-  group_by(cusip_id) |>
-  filter(all(observation_passed) == T) |>
-  ungroup() |>
-  mutate(
-    has_spt_achievement_info = as.logical(!is.na(spt_achieved) | (!is.na(spt_value) & !is.na(spt_observed_val)))
-  ) |>
-  group_by(cusip_id) |>
-  filter(all(has_spt_achievement_info) == T) |>
-  ungroup() |>
+SLB_kpis_filtered |>
   left_join(
     SLB_infos |> select(cusip_id, bond_modification_mechanism),
     by = c("cusip_id")
@@ -472,27 +533,12 @@ SLB_kpis |>
 ```
 
 
-Sur les 353 SLBs obtenus précédemment, seuls 298 disposent d'un mécanisme de récompenses/pénalité affectant les cash-flow de l'obligation et d'informations suffisamment fournis sur les récompenses et les pénalités en cas de non atteinte des SPTs.
+Sur les 420 SLBs filtrés précédemment, seuls 344 disposent d'un mécanisme de récompenses/pénalité affectant les cash-flow de l'obligation et d'informations suffisamment fournis sur les récompenses et les pénalités en cas de non réalisation des objectifs de durabilité.
 
-Pour la suite, nous excluons les 45 autres SLBs. Puis, nous ressortons la proportion des SLBs libellées en dollars US ou euros EUR, et disposant d'un historique de prix.
+Pour la suite, nous excluons les 76 autres SLBs.
 
 ```{r}
-#| echo: false
-#| warning: false
-
-SLB_kpis |>
-  mutate(
-    observation_passed = as.logical(as.numeric(observation_date) <= as.numeric(f01_oct_date))
-  ) |>
-  group_by(cusip_id) |>
-  filter(all(observation_passed) == T) |>
-  ungroup() |>
-  mutate(
-    has_spt_achievement_info = as.logical(!is.na(spt_achieved) | (!is.na(spt_value) & !is.na(spt_observed_val)))
-  ) |>
-  group_by(cusip_id) |>
-  filter(all(has_spt_achievement_info) == T) |>
-  ungroup() |>
+SLB_kpis_filtered = SLB_kpis_filtered |>
   left_join(
     SLB_infos |> select(cusip_id, bond_modification_mechanism),
     by = c("cusip_id")
@@ -507,14 +553,30 @@ SLB_kpis |>
     stepupdw_data_provived = as.logical(stepupdw_val_provided & stepupdw_effective_dt_provided)
   ) |>
   group_by(cusip_id) |>
-  filter(all(slb_cashflow_modified_by_spt) == T & all(stepupdw_data_provived) == T) |>
-  ungroup() |>
+  filter(
+    all(slb_cashflow_modified_by_spt) == T &  # We keep KPI items for SLB which bond modification mechanism affect bond cashflow
+    all(stepupdw_data_provived) == T # We keep KPI items for SLB which cashflow related bond modification mechanism data are provided
+  ) |>
+  ungroup()
+```
+
+
+### Devises associées aux SLBs
+
+Nous ressortons la proportion des SLBs libellés dans les cinq devises les plus représentées de notre base de données, et qui disposent d'un historique de prix non vide.
+
+```{r}
+#| echo: false
+#| warning: false
+
+allowed_currencies <- c("EUR", "USD", "JPY", "CNY", "MYR")
+SLB_kpis_filtered |>
   left_join(
     SLB_bonds |> select(cusip_id, currency),
     by = c("cusip_id")
   ) |>
   mutate(
-    interest_currency = as.logical(currency %in% c("USD", "EUR")),
+    interest_currency = as.logical(currency %in% allowed_currencies),
     cusip_cid = stringr::str_to_upper(cusip_id)
   ) |>
   left_join(
@@ -537,8 +599,8 @@ SLB_kpis |>
   ) |>
   rename(
     " " = has_prices,
-    "Currency is USD or EUR" = `TRUE`,
-    "Currency is not USD nor EUR" = `FALSE`
+    "Currency is in `allowed currencies` list" = `TRUE`,
+    "Currency is not in `allowed currencies` list" = `FALSE`
   ) |>
   kable() |>
   kable_styling() |> 
@@ -547,50 +609,16 @@ SLB_kpis |>
   
 ```
 
-
-Sur les 298 SLBs précédents, seuls 156 sont libellés en USD ou en EUR, et disposent d'un historique de prix.
-
-Nous excluons les 142 autres SLBs. Enfin, nous ressortons des 156 SLBs sélectionnés la proportion de ceux qui disposent d'un historique de prix avant et après la date d'observation d'atteinte de l'objectif SPT. Un SLB dispose d'un historique de prix avant et après cette date si et seulement s'il existe au moins 3 prix mensuels avant et après la date d'observation d'atteinte de l'objectif SPT.
+Sur les 344 SLBs filtrés précédemment, 253 sont libellés en USD, EUR, JPY, CNY ou MYR et disposent d'un historique de prix non vide. Pour la suite, nous excluons donc les 91 autres SLBs.
 
 ```{r}
-#| echo: false
-#| warning: false
-
-prices_tmp = SLB_kpis |>
-  mutate(
-    observation_passed = as.logical(as.numeric(observation_date) <= as.numeric(f01_oct_date))
-  ) |>
-  group_by(cusip_id) |>
-  filter(all(observation_passed) == T) |>
-  ungroup() |>
-  mutate(
-    has_spt_achievement_info = as.logical(!is.na(spt_achieved) | (!is.na(spt_value) & !is.na(spt_observed_val)))
-  ) |>
-  group_by(cusip_id) |>
-  filter(all(has_spt_achievement_info) == T) |>
-  ungroup() |>
-  left_join(
-    SLB_infos |> select(cusip_id, bond_modification_mechanism),
-    by = c("cusip_id")
-  ) |>
-  mutate(
-    slb_cashflow_modified_by_spt = as.logical(bond_modification_mechanism %in% c("Modification of the coupon", "Premium Payment")),
-    stepupdw_val_provided = as.logical(!is.na(bp_increase) | !is.na(bp_decrease)),
-    stepupdw_effective_dt_provided = as.logical(
-      (bond_modification_mechanism == "Modification of the coupon" & (!is.na(coupon_step_effective_dt) | !is.na(coupon_step_payment_dt))) |
-      (bond_modification_mechanism == "Premium Payment")
-    ),
-    stepupdw_data_provived = as.logical(stepupdw_val_provided & stepupdw_effective_dt_provided)
-  ) |>
-  group_by(cusip_id) |>
-  filter(all(slb_cashflow_modified_by_spt) == T & all(stepupdw_data_provived) == T) |>
-  ungroup() |>
+SLB_prices_filtered = SLB_kpis_filtered |>
   left_join(
     SLB_bonds |> select(cusip_id, currency),
     by = c("cusip_id")
   ) |>
   mutate(
-    interest_currency = as.logical(currency %in% c("USD", "EUR")),
+    interest_currency = as.logical(currency %in% allowed_currencies),
     cusip_cid = stringr::str_to_upper(cusip_id)
   ) |>
   left_join(
@@ -600,24 +628,78 @@ prices_tmp = SLB_kpis |>
   ) |>
   group_by(cusip_id) |>
   filter(all(interest_currency) == T & any(!is.na(price)) == T) |>
-  ungroup() |>
-  select(cusip_id, cusip_cid, price_date = date, price)
+  ungroup()
 
-p <- SLB_kpis |>
-  distinct(cusip_id, observation_date) |>
-  filter(cusip_id %in% unique(prices_tmp$cusip_id)) |>
+SLB_kpis_filtered = SLB_kpis_filtered |>
+  filter(cusip_id %in% unique(SLB_prices_filtered$cusip_id))
+```
+
+
+
+### Distribution des dates d'observation des KPI
+
+La distribution du nombre d'objectifs de durabilités en fonction des dates d'observation est dépeinte dans le tableau et la figure ci-dessous:
+
+```{r}
+#| echo: false
+#| warning: false
+#| fig-cap: "Distribution du nombre de KPIs en fonction des dates d'observation"
+
+library(ggplot2)
+
+plot(table(SLB_kpis_filtered$observation_date), ylab = "Number of KPIs", xlab = "Time")
+```
+
+```{r}
+#| echo: false
+#| warning: false
+
+table(SLB_kpis_filtered$observation_date)
+```
+
+La majorité des dates d'observation des objectifs de durabilité est fixée à des dates correspondantes aux fins d'année: soit les 31 décembre 2022, 2023, 2024 et 2025. Nous conservons donc uniquement les KPIs dont les dates d'observation correspondent à ces dates, et plus largement les KPIs dont les dates d'observation se situent en décembre.
+
+L'exclusion des autres KPIs nous permettra notamment d'avoir suffisamment d'espace temporel entre deux dates d'observation consécutives, pour avoir des fenêtres avant-après observation non superposées, préréquis nécessaire à l'application du modèle DiD (Differences in differences).
+
+```{r}
+SLB_kpis_filtered = SLB_kpis_filtered |>
+  filter(lubridate::month(observation_date) == 12)
+
+SLB_prices_filtered = SLB_prices_filtered |>
+  filter(cusip_id %in% unique(SLB_kpis_filtered$cusip_id))
+
+print(length(unique(SLB_kpis_filtered$cusip_id)))
+```
+
+Sur les 253 SLBs filtrés précédemment, seules les dates d'observation de 239 d'entre eux sont en décembre.
+
+
+### Historique de prix disponible autour des dates d'observation des KPIs
+
+Enfin, nous ressortons la proportion des SLBs qui disposent d'un historique de prix suffisamment fourni autour des dates d'observation de réalisation des objectifs de durabilité. Nous considérons qu'un SLB dispose d'un historique de prix suffisamment fourni lorsqu'il dispose d'un historique de prix au moins 6 mois avant et 6 mois après toute date d'observation de réalisation d'objectif de durabilité.
+
+
+```{r}
+#| echo: false
+#| warning: false
+
+SLB_prices_filtered |>
+  mutate(
+    obs_date = ceiling_date(observation_date, unit = "month") - ddays(1)
+  ) |>
+  distinct(cusip_id, obs_date) |>
   left_join(
-    prices_tmp,
+    SLB_prices_filtered |> select(cusip_id, cusip_cid, price_date = date, price),
     by = c("cusip_id"),
     multiple = "all",
     relationship = "many-to-many"
   ) |>
   summarise(
     has_enough_prices = as.logical(
-      sum(as.numeric(price_date) <= as.numeric(observation_date)) >= 3 & # Prices before obs date
-        sum(as.numeric(price_date) > as.numeric(observation_date)) >= 3 # Prices after obs date
+      sum(as.numeric(price_date) <= as.numeric(obs_date)) >= 6 & # Prices before obs date
+        sum(as.numeric(price_date) > as.numeric(obs_date)) >= 6 # Prices after obs date
     ),
-    .by = c("cusip_id", "observation_date")
+    .by = c("cusip_id", "obs_date")
   ) |>
   summarise(
     has_enough_prices = all(has_enough_prices) == T,
@@ -627,115 +709,702 @@ p <- SLB_kpis |>
   pivot_wider(names_from = has_enough_prices, values_from = c) |>
   bind_cols(tibble(`FALSE`=0)) |>
   rename(
-    "SLBs have at least 3 monthly prices around SPT obs date" = `TRUE`,
-    "SLBs have less than 3 monthly prices around SPT obs date" = `FALSE`
+    "SLBs have at least 12 monthly prices (6b, 6a) around SPT obs date" = `TRUE`,
+    "SLBs have less than 12 monthly prices (6b, 6a) around SPT obs date" = `FALSE`
   ) |>
   kable() |>
   kable_styling() |> 
   row_spec(0, bold = T)
 
-rm(list = c("prices_tmp"))  
-
-p
 ```
 
 
-Tous les 156 SLBs disposent d'un historique de prix avant et après la date d'observation d'atteinte de l'objectif SPT. Donc nous les conservons.
+Tous les 239 SLBs filtrés précédemment disposent d'un historique de prix suffisamment fourni autour des dates d'observation de réalisation des objectifs de durabilité.
+
+Nous terminons par filtrer les bases de données des prix hebdomadaires et journaliers pour ne garder que les SLBs qui ont passé tous les filtres précédents.
+
+```{r}
+SLB_prices_weekly_filtered = SLB_prices_weekly |>
+  filter(cusip_id %in% unique(SLB_prices_filtered$cusip_cid)) |>
+  left_join(
+    SLB_prices_filtered |> distinct(cusip_id, cusip_cid),
+    by = join_by(cusip_id == cusip_cid)
+  ) |>
+  rename(
+    cusip_cid = cusip_id,
+    cusip_id = cusip_id.y
+  ) |>
+  relocate(
+    cusip_id, .before = date
+  ) |>
+  relocate(
+    cusip_cid, .after = cusip_id
+  )
+
+SLB_prices_daily_filtered = SLB_prices_daily |>
+  filter(cusip_id %in% unique(SLB_prices_filtered$cusip_cid)) |>
+  left_join(
+    SLB_prices_filtered |> distinct(cusip_id, cusip_cid),
+    by = join_by(cusip_id == cusip_cid)
+  ) |>
+  rename(
+    cusip_cid = cusip_id,
+    cusip_id = cusip_id.y
+  ) |>
+  relocate(
+    cusip_id, .before = date
+  ) |>
+  relocate(
+    cusip_cid, .after = cusip_id
+  )
+```
+
+
 
 
 ## Construction finale des bases de données
 
 Nous construisons les bases de données finales uniquement sur la base des 156 SLBs ayant passé tous les filtres précédents.
 
+**Formattage des données restantes**
+
 ```{r}
 #| echo: false
 #| warning: false
 
-SLB_f_prices <- SLB_kpis |>
+SLB_kpis_merged = SLB_kpis_filtered |>
   mutate(
-    observation_passed = as.logical(as.numeric(observation_date) <= as.numeric(f01_oct_date))
+    kpi_thm = case_when(
+      kpi_theme == "Climate Change (GHG Emissions & Energy)" ~ "KPIT_CliChg",
+      kpi_theme == "Raw Material Sourcing & Recycling (Circular Economy)" ~ "KPIT_Recycl",
+      kpi_theme == "Waste" ~ "KPIT_Waste",
+      kpi_theme == "Water (incl. Ocean)" ~ "KPIT_Water",
+      kpi_theme == "Air quality" ~ "KPIT_AirQl",
+      kpi_theme == "Air Quality" ~ "KPIT_AirQl",
+      kpi_theme == "Diversity, Equity, & Inclusion" ~ "KPIT_DEI",
+      kpi_theme == "Consumers (Relation & Welfare, Responsible Marketing & Product Labelling)" ~ "KPIT_Cons",
+      kpi_theme == "Access & Affordability" ~ "KPIT_Accs",
+      kpi_theme == "Value Chain" ~ "KPIT_VlChn",
+      kpi_theme == "Product Governance (Safety & Quality)" ~ "KPIT_PrdGv",
+      kpi_theme == "Other" ~ "KPIT_Other",
+      TRUE ~ NA
+    )
   ) |>
-  group_by(cusip_id) |>
-  filter(all(observation_passed) == T) |>
-  ungroup() |>
+  mutate(v = 1) |> 
+  pivot_wider(names_from = kpi_thm, values_from = v, values_fill = 0) |>
   mutate(
-    has_spt_achievement_info = as.logical(!is.na(spt_achieved) | (!is.na(spt_value) & !is.na(spt_observed_val)))
+    obs_date = ceiling_date(observation_date, unit = "month") - ddays(1)
   ) |>
-  group_by(cusip_id) |>
-  filter(all(has_spt_achievement_info) == T) |>
-  ungroup() |>
-  left_join(
-    SLB_infos |> select(cusip_id, bond_modification_mechanism),
-    by = c("cusip_id")
-  ) |>
-  mutate(
-    slb_cashflow_modified_by_spt = as.logical(bond_modification_mechanism %in% c("Modification of the coupon", "Premium Payment")),
-    stepupdw_val_provided = as.logical(!is.na(bp_increase) | !is.na(bp_decrease)),
-    stepupdw_effective_dt_provided = as.logical(
-      (bond_modification_mechanism == "Modification of the coupon" & (!is.na(coupon_step_effective_dt) | !is.na(coupon_step_payment_dt))) |
-      (bond_modification_mechanism == "Premium Payment")
+  summarise(
+    n_spts = n(),
+    n_spts_achieved = sum(spt_achieved == 1),
+    spt_achieved = all(spt_achieved),
+    expc_bp_increase = sum(bp_increase, na.rm = T),
+    expc_bp_decrease = sum(bp_decrease, na.rm = T),
+    bp_increase = sum(bp_increase[which(spt_achieved == 0)], na.rm = T),
+    bp_decrease = sum(bp_decrease[which(spt_achieved == 1)], na.rm = T),
+    coupon_step_effective_dt = min(coupon_step_effective_dt),
+    coupon_step_payment_dt = min(coupon_step_payment_dt),
+    spt_description = paste(spt_description, collapse="; "),
+    across(starts_with("KPIT_"), function(x) {as.numeric(sum(x) > 0)}),
+    .by = c("cusip_id", "obs_date")
+  ) 
+
+rating_encoder <- function (x) {
+  y <- factor(
+    if_else(
+      is.na(x) | x == "NR",
+      "NA",
+      if_else(
+        stringr::str_starts(x, "A"),
+        "A",
+        if_else(stringr::str_starts(x, "B"), "B", "C")
+      )
     ),
-    stepupdw_data_provived = as.logical(stepupdw_val_provided & stepupdw_effective_dt_provided)
-  ) |>
-  group_by(cusip_id) |>
-  filter(all(slb_cashflow_modified_by_spt) == T & all(stepupdw_data_provived) == T) |>
-  ungroup() |>
-  left_join(
-    SLB_bonds |> select(cusip_id, currency),
-    by = c("cusip_id")
+    levels = c("NA", "A", "B", "C")
+  )
+}
+
+SLB_filtered_bonds = SLB_bonds |>
+  filter(cusip_id %in% unique(SLB_kpis_merged$cusip_id)) |>
+  select(
+    cusip_id, 
+    moody_rating = moody_init_rating,
+    coupon,
+    maturity,
+    series,
+    bbg_rating = bbg_composite,
+    mty_type,
+    currency
   ) |>
   mutate(
-    interest_currency = as.logical(currency %in% c("USD", "EUR")),
-    cusip_cid = stringr::str_to_upper(cusip_id)
+    moody_rating = rating_encoder(.data[["moody_rating"]]),
+    coupon = as.numeric(coupon),
+    bbg_rating = rating_encoder(.data[["bbg_rating"]]),
+    mty_type = as.factor(mty_type),
+    currency = factor(currency, levels = allowed_currencies)
   ) |>
   left_join(
-    SLB_prices,
-    by = join_by(cusip_cid == cusip_id),
+    SLB_infos |> 
+      select(cusip_id, plty_rwrd_mech = bond_modification_mechanism, icma = icma_principles_alignd_indicator, slct_kpi = selection_of_kpi) |>
+      mutate(
+        plty_rwrd_mech = factor(
+          if_else(plty_rwrd_mech == "Modification of the coupon", "Coupon", "Premuim"), 
+          levels = c("Coupon", "Premuim")
+        ),
+        icma = factor(if_else(icma, "Yes", "No"), levels = c("No", "Yes")),
+        slct_kpi = factor(if_else(slct_kpi, "Yes", "No"), levels = c("No", "Yes"))
+      ), 
+    by = c("cusip_id")
+  )
+```
+
+
+**Base de données finale**
+
+```{r}
+#| echo: false
+#| warning: false
+
+SLB_cusip_filtered <- unique(SLB_kpis_filtered$cusip_id)
+
+SLB_final_db <- SLB_kpis_merged |>
+  left_join(SLB_filtered_bonds, by = c("cusip_id")) |>
+  mutate(
+    rl_bp_increase = if_else(coupon == 0 | is.na(coupon), NA, (bp_increase/coupon)),
+    rl_bp_decrease = if_else(coupon == 0 | is.na(coupon), NA, (bp_decrease/coupon)),
+    spt_failed_dum = as.numeric(spt_achieved == F),
+    spt_pnlt_rwrd_num = if_else(spt_achieved, -rl_bp_decrease, rl_bp_increase)
+  ) |>
+  relocate(rl_bp_increase, .after = bp_decrease) |>
+  relocate(rl_bp_decrease, .after = rl_bp_increase)
+
+SLB_final_mprc_db <- SLB_final_db |>
+  left_join(
+    SLB_prices_filtered |> 
+      group_by(cusip_id) |>
+      mutate(
+        ret = ((price - dplyr::lag(price))/dplyr::lag(price))*100
+      ) |>
+      dplyr::select(cusip_id, cusip_cid, price_date = date, ret) |>
+      distinct(cusip_id, cusip_cid, price_date, ret, .keep_all = F),
+    by = c("cusip_id"),
+    multiple = "all",
     relationship = "many-to-many"
   ) |>
-  group_by(cusip_id) |>
-  filter(all(interest_currency) == T & any(!is.na(price)) == T) |>
-  ungroup() |>
-  select(cusip_cid, cusip_id, date, price) |>
-  arrange(cusip_cid, date)
+  mutate(
+    mdiff = time_length(price_date - obs_date, unit = "month"),
+    post_obs_date_dum = as.numeric(mdiff > 0),
+    post_obs_date_num = round(mdiff),
+    post_obs_date_month = round(mdiff),
+  ) |>
+  filter(mdiff >= -5.1 & mdiff <= 6.1)
+  
+SLB_final_wprc_db <- SLB_final_db |>
+  left_join(
+    SLB_prices_weekly_filtered |> 
+      group_by(cusip_id) |>
+      mutate(
+        ret = ((price - dplyr::lag(price))/dplyr::lag(price))*100
+      ) |>
+      dplyr::select(cusip_id, cusip_cid, price_date = date, ret) |>
+      distinct(cusip_id, cusip_cid, price_date, ret, .keep_all = F),
+    by = c("cusip_id"),
+    multiple = "all",
+    relationship = "many-to-many"
+  ) |>
+  mutate(
+    mdiff = time_length(price_date - obs_date, unit = "month"),
+    wdiff = time_length(price_date - obs_date, unit = "week"),
+    post_obs_date_dum = as.numeric(wdiff > 0),
+    post_obs_date_num = round(wdiff),
+    post_obs_date_month = round(mdiff),
+  ) |>
+  filter(wdiff >= -25.1 & wdiff <= 26.1)
+  
+  
+SLB_final_dprc_db <- SLB_final_db |>
+  left_join(
+    SLB_prices_daily_filtered |> 
+      group_by(cusip_id) |>
+      mutate(
+        ret = ((price - dplyr::lag(price))/dplyr::lag(price))*100
+      ) |>
+      dplyr::select(cusip_id, cusip_cid, price_date = date, ret) |>
+      distinct(cusip_id, cusip_cid, price_date, ret, .keep_all = F),
+    by = c("cusip_id"),
+    multiple = "all",
+    relationship = "many-to-many"
+  ) |>
+  mutate(
+    mdiff = time_length(price_date - obs_date, unit = "month"),
+    ddiff = time_length(price_date - obs_date, unit = "day"),
+    post_obs_date_dum = as.numeric(ddiff > 0),
+    post_obs_date_num = round(ddiff),
+    post_obs_date_month = round(mdiff),
+  ) |>
+  filter(ddiff >= -182.1 & ddiff <= 183.1)
+  
+  
 
-cusip_flist <- unique(SLB_f_prices$cusip_id)
-
-SLB_f_bonds <- SLB_bonds |>
-  left_join(SLB_infos, by = c("cusip_id")) |>
-  filter(cusip_id %in% cusip_flist)
-
-SLB_f_kpis <- SLB_kpis |>
-  filter(cusip_id %in% cusip_flist)
+kableExtra::kable(head(SLB_final_db))
 ```
 
 
-**Base de données finale des caractéristiques SLBs**
+
+# Evolutions des rendements autour des dates d'observation des KPIs
+
+Nous construisons des graphiques qui renseignent sur l'évolution des rendements des obligations autour de la date d'observation des KPIs. 
+
+## Rendements mensuels
 
 ```{r}
 #| echo: false
 #| warning: false
+#| layout-ncol: 1
+#| layout-nrow: 3
+#| fig-subcap:
+#| - "KPI's SPT achieved SLBs"
+#| - "KPI's SPT not achived SLBs"
+#| - "All SLBs"
+#| fig-cap: "Monthly SLB returns around KPI observation date"
 
-summary((SLB_f_bonds |> mutate(currency = as.factor(currency)))[, c("cusip_id", "issue_date", "maturity", "coupon", "currency")])
+
+SLB_final_mprc_db |>
+  filter(spt_failed_dum == 0) |>
+  summarise(
+    q5 = quantile(ret, 0.05, na.rm = T),
+    med = median(ret, na.rm = T),
+    avg = mean(ret, na.rm = T),
+    q95 = quantile(ret, 0.95, na.rm = T),
+    .by = c("post_obs_date_num")
+  ) |>
+  ggplot(aes(x = post_obs_date_num)) +
+  geom_ribbon(aes(ymin = q5, ymax = q95), fill = "deepskyblue", alpha = 0.15) +
+  geom_line(aes(y = q5), color = "deepskyblue3", linetype = "dashed", linewidth = 0.5) +
+  geom_line(aes(y = q95), color = "deepskyblue3", linetype = "dashed", linewidth = 0.5) +
+  geom_line(aes(y = avg), color = "navyblue", linewidth = 1) +
+  geom_vline(xintercept = 0, color = "red", linetype = "dashed", size = 1) +
+  geom_text(
+    aes(x = 0, y = max(q95), label = "Observation date"), 
+    color = "red", angle = 90, vjust = -0.5, hjust = 1
+  ) +
+  labs(
+    x = "Months after/before KPI observation date",
+    y = "Mean SLB returns"
+  ) +
+  theme_minimal()
+
+SLB_final_mprc_db |>
+  filter(spt_failed_dum == 1) |>
+  summarise(
+    q5 = quantile(ret, 0.05, na.rm = T),
+    med = median(ret, na.rm = T),
+    avg = mean(ret, na.rm = T),
+    q95 = quantile(ret, 0.95, na.rm = T),
+    .by = c("post_obs_date_num")
+  ) |>
+  ggplot(aes(x = post_obs_date_num)) +
+  geom_ribbon(aes(ymin = q5, ymax = q95), fill = "deepskyblue", alpha = 0.15) +
+  geom_line(aes(y = q5), color = "deepskyblue3", linetype = "dashed", linewidth = 0.5) +
+  geom_line(aes(y = q95), color = "deepskyblue3", linetype = "dashed", linewidth = 0.5) +
+  geom_line(aes(y = avg), color = "navyblue", linewidth = 1) +
+  geom_vline(xintercept = 0, color = "red", linetype = "dashed", size = 1) +
+  geom_text(
+    aes(x = 0, y = max(q95), label = "Observation date"), 
+    color = "red", angle = 90, vjust = -0.5, hjust = 1
+  ) +
+  labs(
+    x = "Months after/before KPI observation date",
+    y = "Mean SLB returns"
+  ) +
+  theme_minimal()
+
+SLB_final_mprc_db |>
+  summarise(
+    q5 = quantile(ret, 0.05, na.rm = T),
+    med = median(ret, na.rm = T),
+    avg = mean(ret, na.rm = T),
+    q95 = quantile(ret, 0.95, na.rm = T),
+    .by = c("post_obs_date_num")
+  ) |>
+  ggplot(aes(x = post_obs_date_num)) +
+  geom_ribbon(aes(ymin = q5, ymax = q95), fill = "deepskyblue", alpha = 0.15) +
+  geom_line(aes(y = q5), color = "deepskyblue3", linetype = "dashed", linewidth = 0.5) +
+  geom_line(aes(y = q95), color = "deepskyblue3", linetype = "dashed", linewidth = 0.5) +
+  geom_line(aes(y = avg), color = "navyblue", linewidth = 1) +
+  geom_vline(xintercept = 0, color = "red", linetype = "dashed", size = 1) +
+  geom_text(
+    aes(x = 0, y = max(q95), label = "Observation date"), 
+    color = "red", angle = 90, vjust = -0.5, hjust = 1
+  ) +
+  labs(
+    x = "Months after/before KPI observation date",
+    y = "Mean SLB returns"
+  ) +
+  theme_minimal()
+
 ```
 
-**Base de données finale des KPIs**
+Pour les SLB dont les objectifs de durabilité ont été atteints, on observe une relative stabilité des rendements sur les deux premiers mois après la date d'observation. Les rendements chutent substantiellement le premier mois pour remonter ensuite le 4e mois après la date d'observation. Du 5e au 6e mois, les rendements sont plutôt stables.
+
+Concernant les SLB dont les objectifs de durabilité n'ont pas été atteints, les rendements chutent sur les trois premiers mois suivant la date d'observation, pour remonter légèrement au 4e mois. A partir du 5e mois, les rendements sont plutôt stables. Il est à noter que la chute des rendements observées pour les SLBs dont les objectifs ont été ratés sur le 3e mois après la date d'observation est moins marquée que la chute des rendements observées pour les SLBs dont les objectifs ont été atteints.
+
+L'évolution des rendements autour de la date d'observation pour l'ensemble des SLBs est similaire à celle concernant les SLBs dont les objectifs ont été atteint. Cela s'explique par le fait que les SLBs dont les objectifs ont été atteint représentent la majorité des SLBs de notre échantillon filtré.
+
+De plus, les tendances évolutives des rendements avant la date d'observation apparaissent similaires pour les deux catégories de SLBs, en particulier sur les deux mois précédant la date d'observation. En conclusion, les deux mois entourant la date d'observation des KPIs apparait comme étant l'intervalle charnière susceptible de nous fournir des informations sur la réaction du marché aux informations d'atteinte des objectifs de durabilité.
+
+Nous confirmons l'importance de cette intervalle autour de la date d'observation par l'examen des tendances évolutives des rendements hebdomadaires et journaliers des SLBs, réalisé ci-dessous.
+
+## Rendements hebdomadaires
 
 ```{r}
 #| echo: false
 #| warning: false
+#| layout-ncol: 1
+#| layout-nrow: 3
+#| fig-subcap:
+#| - "KPI's SPT achieved SLBs"
+#| - "KPI's SPT not achived SLBs"
+#| - "All SLBs"
+#| fig-cap: "Weekly SLB returns around KPI observation date"
 
-summary(SLB_f_kpis[, c("cusip_id", "bp_increase", "bp_decrease", "spt_achieved")])
+
+SLB_final_wprc_db |>
+  filter(spt_failed_dum == 0) |>
+  summarise(
+    q5 = quantile(ret, 0.05, na.rm = T),
+    med = median(ret, na.rm = T),
+    avg = mean(ret, na.rm = T),
+    q95 = quantile(ret, 0.95, na.rm = T),
+    .by = c("post_obs_date_num")
+  ) |>
+  ggplot(aes(x = post_obs_date_num)) +
+  geom_ribbon(aes(ymin = q5, ymax = q95), fill = "deepskyblue", alpha = 0.15) +
+  geom_line(aes(y = q5), color = "deepskyblue3", linetype = "dashed", linewidth = 0.5) +
+  geom_line(aes(y = q95), color = "deepskyblue3", linetype = "dashed", linewidth = 0.5) +
+  geom_line(aes(y = avg), color = "navyblue", linewidth = 1) +
+  geom_vline(xintercept = 0, color = "red", linetype = "dashed", size = 1) +
+  geom_text(
+    aes(x = 0, y = max(q95), label = "Observation date"), 
+    color = "red", angle = 90, vjust = -0.5, hjust = 1
+  ) +
+  labs(
+    x = "Weeks after/before KPI observation date",
+    y = "Mean SLB returns"
+  ) +
+  theme_minimal()
+
+SLB_final_wprc_db |>
+  filter(spt_failed_dum == 1) |>
+  summarise(
+    q5 = quantile(ret, 0.05, na.rm = T),
+    med = median(ret, na.rm = T),
+    avg = mean(ret, na.rm = T),
+    q95 = quantile(ret, 0.95, na.rm = T),
+    .by = c("post_obs_date_num")
+  ) |>
+  ggplot(aes(x = post_obs_date_num)) +
+  geom_ribbon(aes(ymin = q5, ymax = q95), fill = "deepskyblue", alpha = 0.15) +
+  geom_line(aes(y = q5), color = "deepskyblue3", linetype = "dashed", linewidth = 0.5) +
+  geom_line(aes(y = q95), color = "deepskyblue3", linetype = "dashed", linewidth = 0.5) +
+  geom_line(aes(y = avg), color = "navyblue", linewidth = 1) +
+  geom_vline(xintercept = 0, color = "red", linetype = "dashed", size = 1) +
+  geom_text(
+    aes(x = 0, y = max(q95), label = "Observation date"), 
+    color = "red", angle = 90, vjust = -0.5, hjust = 1
+  ) +
+  labs(
+    x = "Weeks after/before KPI observation date",
+    y = "Mean SLB returns"
+  ) +
+  theme_minimal()
+
+SLB_final_wprc_db |>
+  summarise(
+    q5 = quantile(ret, 0.05, na.rm = T),
+    med = median(ret, na.rm = T),
+    avg = mean(ret, na.rm = T),
+    q95 = quantile(ret, 0.95, na.rm = T),
+    .by = c("post_obs_date_num")
+  ) |>
+  ggplot(aes(x = post_obs_date_num)) +
+  geom_ribbon(aes(ymin = q5, ymax = q95), fill = "deepskyblue", alpha = 0.15) +
+  geom_line(aes(y = q5), color = "deepskyblue3", linetype = "dashed", linewidth = 0.5) +
+  geom_line(aes(y = q95), color = "deepskyblue3", linetype = "dashed", linewidth = 0.5) +
+  geom_line(aes(y = avg), color = "navyblue", linewidth = 1) +
+  geom_vline(xintercept = 0, color = "red", linetype = "dashed", size = 1) +
+  geom_text(
+    aes(x = 0, y = max(q95), label = "Observation date"), 
+    color = "red", angle = 90, vjust = -0.5, hjust = 1
+  ) +
+  labs(
+    x = "Weeks after/before KPI observation date",
+    y = "Mean SLB returns"
+  ) +
+  theme_minimal()
+
 ```
 
-**Base de données finale des prix**
+Les tendances évolutives des rendements hebdomadaires confirment les observations faites à partir des tendances évolutives des rendements mensuels. Les différences entre les rendements hebdomadaires des SLBs dont les objectifs ont été atteints et les SLBs dont les objectifs ont été ratées apparaissent et sont marquées dans les 8 premières semaines, en défaveur des SLBs dont les objectifs ont été ratés. De plus, de la 9e à la 13e semaine, qui correspondent au 3e mois, la différence devient en défaveur des SLBs dont les objectifs ont été atteints.
+
+
+## Rendements journaliers
 
 ```{r}
 #| echo: false
 #| warning: false
+#| layout-ncol: 1
+#| layout-nrow: 3
+#| fig-subcap:
+#| - "KPI's SPT achieved SLBs"
+#| - "KPI's SPT not achived SLBs"
+#| - "All SLBs"
+#| fig-cap: "Daily SLB returns around KPI observation date"
 
-summary(SLB_f_prices)
+
+SLB_final_dprc_db |>
+  filter(spt_failed_dum == 0) |>
+  summarise(
+    q5 = quantile(ret, 0.05, na.rm = T),
+    med = median(ret, na.rm = T),
+    avg = mean(ret, na.rm = T),
+    q95 = quantile(ret, 0.95, na.rm = T),
+    .by = c("post_obs_date_num")
+  ) |>
+  ggplot(aes(x = post_obs_date_num)) +
+  geom_ribbon(aes(ymin = q5, ymax = q95), fill = "deepskyblue", alpha = 0.15) +
+  geom_line(aes(y = q5), color = "deepskyblue3", linetype = "dashed", linewidth = 0.5) +
+  geom_line(aes(y = q95), color = "deepskyblue3", linetype = "dashed", linewidth = 0.5) +
+  geom_line(aes(y = avg), color = "navyblue", linewidth = 1) +
+  geom_vline(xintercept = 0, color = "red", linetype = "dashed", size = 1) +
+  geom_text(
+    aes(x = 0, y = max(q95), label = "Observation date"), 
+    color = "red", angle = 90, vjust = -0.5, hjust = 1
+  ) +
+  labs(
+    x = "Days after/before KPI observation date",
+    y = "Mean SLB returns"
+  ) +
+  theme_minimal()
+
+SLB_final_dprc_db |>
+  filter(spt_failed_dum == 1) |>
+  summarise(
+    q5 = quantile(ret, 0.05, na.rm = T),
+    med = median(ret, na.rm = T),
+    avg = mean(ret, na.rm = T),
+    q95 = quantile(ret, 0.95, na.rm = T),
+    .by = c("post_obs_date_num")
+  ) |>
+  ggplot(aes(x = post_obs_date_num)) +
+  geom_ribbon(aes(ymin = q5, ymax = q95), fill = "deepskyblue", alpha = 0.15) +
+  geom_line(aes(y = q5), color = "deepskyblue3", linetype = "dashed", linewidth = 0.5) +
+  geom_line(aes(y = q95), color = "deepskyblue3", linetype = "dashed", linewidth = 0.5) +
+  geom_line(aes(y = avg), color = "navyblue", linewidth = 1) +
+  geom_vline(xintercept = 0, color = "red", linetype = "dashed", size = 1) +
+  geom_text(
+    aes(x = 0, y = max(q95), label = "Observation date"), 
+    color = "red", angle = 90, vjust = -0.5, hjust = 1
+  ) +
+  labs(
+    x = "Days after/before KPI observation date",
+    y = "Mean SLB returns"
+  ) +
+  theme_minimal()
+
+SLB_final_dprc_db |>
+  summarise(
+    q5 = quantile(ret, 0.05, na.rm = T),
+    med = median(ret, na.rm = T),
+    avg = mean(ret, na.rm = T),
+    q95 = quantile(ret, 0.95, na.rm = T),
+    .by = c("post_obs_date_num")
+  ) |>
+  ggplot(aes(x = post_obs_date_num)) +
+  geom_ribbon(aes(ymin = q5, ymax = q95), fill = "deepskyblue", alpha = 0.15) +
+  geom_line(aes(y = q5), color = "deepskyblue3", linetype = "dashed", linewidth = 0.5) +
+  geom_line(aes(y = q95), color = "deepskyblue3", linetype = "dashed", linewidth = 0.5) +
+  geom_line(aes(y = avg), color = "navyblue", linewidth = 1) +
+  geom_vline(xintercept = 0, color = "red", linetype = "dashed", size = 1) +
+  geom_text(
+    aes(x = 0, y = max(q95), label = "Observation date"), 
+    color = "red", angle = 90, vjust = -0.5, hjust = 1
+  ) +
+  labs(
+    x = "Days after/before KPI observation date",
+    y = "Mean SLB returns"
+  ) +
+  theme_minimal()
+
 ```
+
+
+
+
+# Analyse 1: Variation de prix vs Objectifs de durabilité
+
+Nous examinons dans quelle mesure l'atteinte des objectifs de durabilité affecte les variations de prix des SLBs sur le marché secondaire. Comme modèle économétrique, nous utilisons plusieurs spécifications du modèle DiD (Differences-in-Differences).
+
+$$
+Ret_{i,t} = \beta_0 + \beta_1 SPT\_Failed_i + \beta_2 PostObsDate_t + \beta_3 SPT\_Failed_i \times PostObsDate_t + \gamma' X_{it} + \tau_t + \epsilon_{it}
+$$
+
+
+
+
+## Spécification 1
+
+- Rendements mensuels;
+- $SPT\_Failed = \mathbb{1}_{SPT\_Achieved = No}$;
+- Fenêtre = 2 mois avant et 2 mois après.
+
+$$
+SPT\_Failed
+$$
+
+```{r}
+source("./models.R")
+
+did_model_fit <- function (db_type = "month", period = "2m", sptfl_measure = "dum") {
+  db <- NULL
+  if (db_type == "week") {
+    db <- SLB_final_wprc_db
+  } else {
+    db <- SLB_final_mprc_db
+  }
+  window_af_limit = NULL
+  window_bf_limit = NULL
+  if (db_type == "week") {
+    if (period == "2m") {
+      window_af_limit = 8.1
+      window_bf_limit = -7.1
+    }
+    else {
+      window_af_limit = 26.1
+      window_bf_limit = -25.1
+    }
+  } else {
+    if (period == "2m") {
+      window_af_limit = 2.1
+      window_bf_limit = -2.1
+    }
+    else {
+      window_af_limit = 6.1
+      window_bf_limit = -5.1
+    }
+  }
+  spt_failed_var = NULL
+  if (sptfl_measure == "dum") {
+    spt_failed_var = "spt_failed_dum"
+  } else {
+    spt_failed_var = "spt_pnlt_rwrd_num"
+  }
+  
+  db = db |> 
+    filter(!is.na(ret), post_obs_date_num <= window_af_limit, post_obs_date_num >= window_bf_limit) |>
+    mutate(
+      Month_Label = paste0("Month_", if_else(post_obs_date_month <= 0, "B", "A"), abs(post_obs_date_month)),
+      v = 1
+    ) |>
+    pivot_wider(names_from = Month_Label, values_from = v, values_fill = 0) |>
+    mutate(
+      SPT_Failed = .data[[spt_failed_var]],
+      Post_Obs_Date = .data[["post_obs_date_dum"]]
+    ) |>
+    filter(!is.na(SPT_Failed))
+  
+  XCols <- c(
+    "SPT_Failed",
+    "Post_Obs_Date",
+    "SPT_Failed:Post_Obs_Date"
+  )
+  if (period == "6m") {
+    XCols <- c(
+      XCols, 
+      "Post_Obs_Date:Month_A3",
+      "SPT_Failed:Post_Obs_Date:Month_A3",
+      "Post_Obs_Date:Month_A4",
+      "SPT_Failed:Post_Obs_Date:Month_A4"
+    )
+  }
+  
+  fit1 <- felp_model(
+    dataset = db,
+    Y = c("ret"), 
+    X = XCols,
+    fe = c("obs_date"),
+    cl = c("cusip_id")
+  )
+}
+
+did_model_summ <- function (fit) {
+  db <- liq_db_refiner(asset_type, att_mode)
+  
+  regs <- c("Normal", "Boom", "Crash", "Desert")
+  my_gof <- list(
+    list("raw" = "qt.fe",    "clean" = "FE Quarters", fmt = 0),
+    list("raw" = "nobs",     "clean" = "Num.Obs.",    "fmt" = 0),
+    list("raw" = "r2.nagelkerke", "clean" = "R2 Nagel.", "fmt" = 3),
+    list("raw" = "concordance",   "clean" = "Concordance",    "fmt" = 2),
+    list("raw" = "concordance.std",   "clean" = "Concordance Std",    "fmt" = 3),
+    list("raw" = "aic",      "clean" = "AIC",         "fmt" = 1),
+    list("raw" = "bic",      "clean" = "BIC",         "fmt" = 1)
+  )
+  
+  results <- vector(mode = "list", length = length(regs))
+  for (k in seq_along(regs)) {
+    fit_raw = liq_model_func(
+      db, 
+      regs[k], 
+      att_type = NULL, 
+      asset_type = asset_type, 
+      model_type = model_type
+    )
+    td_raw = get_estimates(fit_raw, ci_method = "wald") |>
+      filter(!str_detect(term, "^Q\\d+_\\d+"))
+    gf_raw = get_gof(fit_raw)
+    gf_raw[["qt.fe"]] = "Yes"
+    if (model_type == "cox") {
+      gf_raw[["concordance"]] = fit_raw$concordance[6]
+      gf_raw[["concordance.std"]] = fit_raw$concordance[7]
+    }
+    mod_raw = list(tidy = td_raw, glance = gf_raw)
+    class(mod_raw) <- "modelsummary_list"
+    
+    results[[k]] = mod_raw
+  }
+  
+  names(results) <- regs
+  
+  tab <- modelsummary(
+    results, 
+    gof_map = my_gof,
+    stars = TRUE, statistic = "p.value", output = "tinytable"
+  ) |> style_tt(fontsize = 0.8)
+  colnames(tab) <- c(" ", colnames(tab)[-1])
+  
+  tab
+}
+
+fit1 <- felp_model(
+  dataset = SLB_final_wprc_db |> filter(!is.na(spt_pnlt_rwrd_num), !is.na(ret), post_obs_date_num <= 8.1, post_obs_date_num >= -7.1), 
+  Y = c("ret"), 
+  X = c(
+    "spt_pnlt_rwrd_num",
+    "post_obs_date_dum",
+    "spt_pnlt_rwrd_num:post_obs_date_dum"
+  ),
+  fe = c("obs_date"),
+  cl = c("cusip_id")
+)
+
+summary(fit1)
+```
+
+
+
+
 
 
 
